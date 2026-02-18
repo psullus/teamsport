@@ -1,0 +1,64 @@
+<div class="dashboard-page">
+  <h1>Control panel</h1>
+
+  <section class="dashboard-section">
+    <h2>Organisations</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>ID</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (org of organisations; track org.id) {
+          <tr>
+            <td>{{ org.name }}</td>
+            <td class="cell-id">{{ org.id }}</td>
+            <td>
+              <button class="btn btn-danger btn-sm" (click)="deleteOrg(org.id)">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>All users</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Organisation</th>
+          <th>Role</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users; track user.id) {
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>{{ user.organisationName }}</td>
+            <td>
+              <select
+                [ngModel]="user.role"
+                (ngModelChange)="onRoleChange(user.id, $event)"
+                name="role-{{ user.id }}"
+                class="role-select"
+              >
+                @for (r of roles; track r) {
+                  <option [value]="r">{{ r }}</option>
+                }
+              </select>
+            </td>
+            <td>
+              <button class="btn btn-danger btn-sm" (click)="deleteUser(user.id)">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</div>

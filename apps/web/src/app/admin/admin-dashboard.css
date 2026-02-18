@@ -1,0 +1,121 @@
+.dashboard-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+.dashboard-page h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.dashboard-section {
+  margin-top: 2rem;
+}
+
+.dashboard-section h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.invite-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.invite-form input {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: var(--font-family);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.invite-form input:focus {
+  border-color: var(--color-accent);
+}
+
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  font-family: var(--font-family);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: #fff;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.success-msg {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #15803d;
+}
+
+.error-msg {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #b91c1c;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table td {
+  color: var(--color-text);
+}
+
+.empty-state {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.invite-list {
+  list-style: none;
+  padding: 0;
+}
+
+.invite-list li {
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}

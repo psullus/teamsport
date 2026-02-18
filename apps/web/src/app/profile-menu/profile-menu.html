@@ -1,0 +1,36 @@
+@if (isLoggedIn()) {
+  <div class="profile-menu">
+    <button
+      class="avatar"
+      (click)="toggle($event)"
+      [attr.aria-expanded]="isOpen()"
+      aria-haspopup="true"
+    >
+      {{ userInitials() }}
+    </button>
+
+    @if (isOpen()) {
+      <div class="dropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-header">
+          <span class="dropdown-name">{{ user()?.organisationName }}</span>
+          <span class="dropdown-email">{{ user()?.email }}</span>
+          <span class="dropdown-role">{{ user()?.role }}</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        @if (isControl()) {
+          <a class="dropdown-item" routerLink="/control" (click)="isOpen.set(false)">Control panel</a>
+        }
+        @if (isAdminOrControl()) {
+          <a class="dropdown-item" routerLink="/admin" (click)="isOpen.set(false)">Organisation dashboard</a>
+        }
+        <button class="dropdown-item">View profile</button>
+        <button class="dropdown-item">Settings</button>
+        <button class="dropdown-item">Help</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" (click)="logout()">Log out</button>
+      </div>
+    }
+  </div>
+} @else {
+  <a class="btn btn-primary" routerLink="/signup">Get started</a>
+}

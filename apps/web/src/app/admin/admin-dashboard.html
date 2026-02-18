@@ -1,0 +1,58 @@
+<div class="dashboard-page">
+  <h1>Organisation dashboard</h1>
+
+  <section class="dashboard-section">
+    <h2>Invite a member</h2>
+    <form class="invite-form" (ngSubmit)="sendInvite()">
+      <input
+        type="email"
+        [(ngModel)]="inviteEmail"
+        name="inviteEmail"
+        placeholder="member@example.com"
+        required
+      />
+      <button type="submit" class="btn btn-primary">Send invite</button>
+    </form>
+    @if (inviteSuccess) {
+      <p class="success-msg">{{ inviteSuccess }}</p>
+    }
+    @if (inviteError) {
+      <p class="error-msg">{{ inviteError }}</p>
+    }
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Members</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Verified</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users; track user.id) {
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role }}</td>
+            <td>{{ user.emailVerified ? 'Yes' : 'No' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Pending invites</h2>
+    @if (invites.length === 0) {
+      <p class="empty-state">No pending invites.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (invite of invites; track invite.id) {
+          <li>{{ invite.email }}</li>
+        }
+      </ul>
+    }
+  </section>
+</div>
