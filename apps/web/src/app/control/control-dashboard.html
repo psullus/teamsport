@@ -12,7 +12,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (org of organisations; track org.id) {
+        @for (org of organisations(); track org.id) {
           <tr>
             <td>{{ org.name }}</td>
             <td class="cell-id">{{ org.id }}</td>
@@ -37,7 +37,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (user of users; track user.id) {
+        @for (user of users(); track user.id) {
           <tr>
             <td>{{ user.email }}</td>
             <td>{{ user.organisationName }}</td>

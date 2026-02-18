@@ -51,7 +51,7 @@ describe('Login', () => {
     component.email = 'bad@test.com';
     component.password = 'wrong';
     await component.onSubmit();
-    expect(component.error).toBe('Invalid email or password');
+    expect(component.error()).toBe('Invalid email or password');
   });
 
   it('should have a link to signup page', async () => {

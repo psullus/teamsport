@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from '../src/app/app.module';
 
 describe('AppController (e2e)', () => {
@@ -11,6 +12,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.setGlobalPrefix('api');
     await app.init();
   });

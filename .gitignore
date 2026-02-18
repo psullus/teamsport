@@ -2,6 +2,7 @@
 
 # Compiled output
 dist/
+!packages/shared/dist/
 tmp/
 out-tsc/
 bazel-out/
@@ -38,6 +39,9 @@ libpeerconnection.log
 testem.log
 typings/
 __screenshots__/
+
+# Environment
+.env
 
 # System files
 .DS_Store

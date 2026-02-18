@@ -17,6 +17,7 @@
           <span class="dropdown-role">{{ user()?.role }}</span>
         </div>
         <div class="dropdown-divider"></div>
+        <a class="dropdown-item" routerLink="/" (click)="isOpen.set(false)">Home</a>
         @if (isControl()) {
           <a class="dropdown-item" routerLink="/control" (click)="isOpen.set(false)">Control panel</a>
         }

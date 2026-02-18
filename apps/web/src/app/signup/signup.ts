@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -13,7 +13,7 @@ export class Signup implements OnInit {
   organisationName = '';
   email = '';
   password = '';
-  error = '';
+  error = signal('');
   inviteToken: string | null = null;
 
   constructor(
@@ -26,7 +26,7 @@ export class Signup implements OnInit {
   }
 
   async onSubmit() {
-    this.error = '';
+    this.error.set('');
     try {
       if (this.inviteToken) {
         await this.authService.signupWithInvite(this.email, this.password, this.inviteToken);
@@ -34,7 +34,7 @@ export class Signup implements OnInit {
         await this.authService.signup(this.organisationName, this.email, this.password);
       }
     } catch (err: any) {
-      this.error = err?.error?.message || 'Signup failed. Please try again.';
+      this.error.set(err?.error?.message || 'Signup failed. Please try again.');
     }
   }
 }

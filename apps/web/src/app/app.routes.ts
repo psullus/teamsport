@@ -8,6 +8,7 @@ import { AdminDashboard } from './admin/admin-dashboard';
 import { ControlDashboard } from './control/control-dashboard';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
+import { ROLES } from '@teamsport/shared';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -18,11 +19,11 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminDashboard,
-    canActivate: [authGuard, roleGuard('ADMIN', 'CONTROL')],
+    canActivate: [authGuard, roleGuard(ROLES.ADMIN, ROLES.CONTROL)],
   },
   {
     path: 'control',
     component: ControlDashboard,
-    canActivate: [authGuard, roleGuard('CONTROL')],
+    canActivate: [authGuard, roleGuard(ROLES.CONTROL)],
   },
 ];

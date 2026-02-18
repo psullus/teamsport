@@ -38,9 +38,9 @@ export class ProfileMenu {
     this.isOpen.update((v) => !v);
   }
 
-  logout() {
+  async logout() {
     this.isOpen.set(false);
-    this.authService.logout();
+    await this.authService.logout();
   }
 
   @HostListener('document:click')

@@ -3,8 +3,8 @@
     <h1>Welcome back</h1>
     <p class="auth-subtitle">Log in to your account.</p>
 
-    @if (error) {
-      <p class="auth-error">{{ error }}</p>
+    @if (error()) {
+      <p class="auth-error">{{ error() }}</p>
     }
 
     <form (ngSubmit)="onSubmit()">

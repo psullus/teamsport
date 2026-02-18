@@ -4,14 +4,28 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
+const mockUser = (overrides: Record<string, unknown> = {}) => ({
+  id: '1',
+  organisationName: 'My Org',
+  organisationId: 'org-1',
+  email: 'test@example.com',
+  emailVerified: false,
+  role: 'ADMIN' as const,
+  ...overrides,
+});
+
+function flushRestoreSession(httpTesting: HttpTestingController) {
+  const req = httpTesting.expectOne('/api/auth/me');
+  req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let httpTesting: HttpTestingController;
   let router: { navigateByUrl: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    localStorage.clear();
-    router = { navigateByUrl: vi.fn() };
+    router = { navigateByUrl: vi.fn().mockResolvedValue(true) };
     TestBed.configureTestingModule({
       providers: [
         AuthService,
@@ -22,11 +36,11 @@ describe('AuthService', () => {
     });
     httpTesting = TestBed.inject(HttpTestingController);
     service = TestBed.inject(AuthService);
+    flushRestoreSession(httpTesting);
   });
 
   afterEach(() => {
     httpTesting.verify();
-    localStorage.clear();
   });
 
   it('should start logged out', () => {
@@ -44,17 +58,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       password: 'pass1234',
     });
-    req.flush({
-      user: {
-        id: '1',
-        organisationName: 'My Org',
-        organisationId: 'org-1',
-        email: 'test@example.com',
-        emailVerified: false,
-        role: 'ADMIN',
-      },
-      accessToken: 'jwt-token',
-    });
+    req.flush({ user: mockUser() });
 
     await promise;
     expect(service.isLoggedIn()).toBe(true);
@@ -63,7 +67,6 @@ describe('AuthService', () => {
     expect(service.isAdmin()).toBe(true);
     expect(service.isAdminOrControl()).toBe(true);
     expect(service.isControl()).toBe(false);
-    expect(localStorage.getItem('accessToken')).toBe('jwt-token');
     expect(router.navigateByUrl).toHaveBeenCalledWith('/verify-email-notice');
   });
 
@@ -73,15 +76,14 @@ describe('AuthService', () => {
     const req = httpTesting.expectOne('/api/auth/login');
     expect(req.request.method).toBe('POST');
     req.flush({
-      user: {
+      user: mockUser({
         id: '2',
         organisationName: 'Some Org',
         organisationId: 'org-2',
         email: 'user@example.com',
         emailVerified: true,
         role: 'USER',
-      },
-      accessToken: 'jwt-token-2',
+      }),
     });
 
     await promise;
@@ -91,7 +93,6 @@ describe('AuthService', () => {
     expect(service.isAdmin()).toBe(false);
     expect(service.isControl()).toBe(false);
     expect(service.isAdminOrControl()).toBe(false);
-    expect(localStorage.getItem('accessToken')).toBe('jwt-token-2');
     expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
@@ -106,15 +107,14 @@ describe('AuthService', () => {
       inviteToken: 'invite-uuid',
     });
     req.flush({
-      user: {
+      user: mockUser({
         id: '3',
         organisationName: 'Team Org',
         organisationId: 'org-3',
         email: 'inv@test.com',
         emailVerified: true,
         role: 'USER',
-      },
-      accessToken: 'jwt-invite',
+      }),
     });
 
     await promise;
@@ -123,42 +123,29 @@ describe('AuthService', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
-  it('should logout, clear token, and navigate to /', async () => {
-    const promise = service.signup('Org', 'a@b.com', 'password');
-    httpTesting.expectOne('/api/auth/signup').flush({
-      user: {
-        id: '1',
-        organisationName: 'Org',
-        organisationId: 'org-1',
-        email: 'a@b.com',
-        emailVerified: false,
-        role: 'ADMIN',
-      },
-      accessToken: 'token',
-    });
-    await promise;
+  it('should logout via POST, clear user, and navigate to /', async () => {
+    // First log in
+    const loginPromise = service.signup('Org', 'a@b.com', 'password');
+    httpTesting.expectOne('/api/auth/signup').flush({ user: mockUser() });
+    await loginPromise;
 
     router.navigateByUrl.mockClear();
-    service.logout();
+    const logoutPromise = service.logout();
 
+    const req = httpTesting.expectOne('/api/auth/logout');
+    expect(req.request.method).toBe('POST');
+    req.flush({});
+
+    await logoutPromise;
     expect(service.isLoggedIn()).toBe(false);
     expect(service.user()).toBeNull();
-    expect(localStorage.getItem('accessToken')).toBeNull();
     expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
   it('should return user initials from organisationName', async () => {
     const promise = service.signup('River Valley FC', 'rv@example.com', 'password');
     httpTesting.expectOne('/api/auth/signup').flush({
-      user: {
-        id: '1',
-        organisationName: 'River Valley FC',
-        organisationId: 'org-1',
-        email: 'rv@example.com',
-        emailVerified: false,
-        role: 'ADMIN',
-      },
-      accessToken: 'token',
+      user: mockUser({ organisationName: 'River Valley FC', email: 'rv@example.com' }),
     });
     await promise;
 
@@ -184,15 +171,14 @@ describe('AuthService', () => {
   it('isControl should be true for CONTROL user', async () => {
     const promise = service.login('ctrl@system.com', 'password');
     httpTesting.expectOne('/api/auth/login').flush({
-      user: {
+      user: mockUser({
         id: '10',
         organisationName: 'System',
         organisationId: 'sys-org',
         email: 'ctrl@system.com',
         emailVerified: true,
         role: 'CONTROL',
-      },
-      accessToken: 'ctrl-token',
+      }),
     });
     await promise;
 
@@ -202,20 +188,17 @@ describe('AuthService', () => {
   });
 
   it('should invite user via HTTP POST', async () => {
-    localStorage.setItem('accessToken', 'admin-token');
     const promise = service.inviteUser('new@test.com');
 
     const req = httpTesting.expectOne('/api/auth/invites');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ email: 'new@test.com' });
-    expect(req.request.headers.get('Authorization')).toBe('Bearer admin-token');
     req.flush({ id: 'inv-1', email: 'new@test.com', token: 'inv-token' });
 
     await promise;
   });
 
   it('should list org users via HTTP GET', async () => {
-    localStorage.setItem('accessToken', 'admin-token');
     const promise = service.listOrgUsers();
 
     const req = httpTesting.expectOne('/api/auth/org/users');
@@ -227,7 +210,6 @@ describe('AuthService', () => {
   });
 
   it('should list all organisations via HTTP GET', async () => {
-    localStorage.setItem('accessToken', 'ctrl-token');
     const promise = service.listAllOrganisations();
 
     const req = httpTesting.expectOne('/api/auth/organisations');
@@ -239,7 +221,6 @@ describe('AuthService', () => {
   });
 
   it('should delete user via HTTP DELETE', async () => {
-    localStorage.setItem('accessToken', 'ctrl-token');
     const promise = service.deleteUser('user-1');
 
     const req = httpTesting.expectOne('/api/auth/users/user-1');
@@ -250,7 +231,6 @@ describe('AuthService', () => {
   });
 
   it('should change user role via HTTP PATCH', async () => {
-    localStorage.setItem('accessToken', 'ctrl-token');
     const promise = service.changeUserRole('user-1', 'ADMIN');
 
     const req = httpTesting.expectOne('/api/auth/users/user-1/role');
@@ -268,14 +248,12 @@ describe('AuthService (session restore)', () => {
   let httpTesting: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.clear();
-    localStorage.setItem('accessToken', 'saved-token');
     TestBed.configureTestingModule({
       providers: [
         AuthService,
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: Router, useValue: { navigateByUrl: vi.fn() } },
+        { provide: Router, useValue: { navigateByUrl: vi.fn().mockResolvedValue(true) } },
       ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
@@ -284,12 +262,11 @@ describe('AuthService (session restore)', () => {
 
   afterEach(() => {
     httpTesting.verify();
-    localStorage.clear();
   });
 
-  it('should restore session from localStorage on init', () => {
+  it('should restore session from cookie on init', () => {
     const req = httpTesting.expectOne('/api/auth/me');
-    expect(req.request.headers.get('Authorization')).toBe('Bearer saved-token');
+    expect(req.request.method).toBe('GET');
     req.flush({
       id: '5',
       organisationName: 'Restored Org',
@@ -298,5 +275,15 @@ describe('AuthService (session restore)', () => {
       emailVerified: true,
       role: 'ADMIN',
     });
+
+    expect(service.isLoggedIn()).toBe(true);
+    expect(service.user()?.organisationName).toBe('Restored Org');
+  });
+
+  it('should silently handle 401 on session restore', () => {
+    const req = httpTesting.expectOne('/api/auth/me');
+    req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+    expect(service.isLoggedIn()).toBe(false);
   });
 });

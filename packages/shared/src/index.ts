@@ -1,4 +1,13 @@
-export type Role = 'CONTROL' | 'ADMIN' | 'USER';
+/** Standard user within an organisation */
+export const USER = 'USER' as const;
+/** Organisation administrator */
+export const ADMIN = 'ADMIN' as const;
+/** Overall system access */
+export const CONTROL = 'CONTROL' as const;
+
+export const ROLES = { USER, ADMIN, CONTROL } as const;
+
+export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export interface Organisation {
   id: string;

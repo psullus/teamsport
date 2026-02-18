@@ -82,7 +82,7 @@ describe('Signup', () => {
     component.email = 'dup@test.com';
     component.password = 'password123';
     await component.onSubmit();
-    expect(component.error).toBe('Email already registered');
+    expect(component.error()).toBe('Email already registered');
   });
 
   it('should have a link to login page', async () => {

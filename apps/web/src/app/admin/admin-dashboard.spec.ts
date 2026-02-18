@@ -76,12 +76,12 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.inviteEmail = 'new@test.com';
+    component.inviteEmail.set('new@test.com');
     await component.sendInvite();
     fixture.detectChanges();
     expect(authService.inviteUser).toHaveBeenCalledWith('new@test.com');
-    expect(component.inviteSuccess).toContain('new@test.com');
-    expect(component.inviteEmail).toBe('');
+    expect(component.inviteSuccess()).toContain('new@test.com');
+    expect(component.inviteEmail()).toBe('');
   });
 
   it('should show error on invite failure', async () => {
@@ -90,8 +90,8 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.inviteEmail = 'fail@test.com';
+    component.inviteEmail.set('fail@test.com');
     await component.sendInvite();
-    expect(component.inviteError).toBe('Something went wrong');
+    expect(component.inviteError()).toBe('Something went wrong');
   });
 });

@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService, Organisation, User, Role } from '../services/auth.service';
+import { AuthService, Organisation, User, Role, ROLES } from '../services/auth.service';
 
 @Component({
   selector: 'app-control-dashboard',
@@ -9,9 +9,9 @@ import { AuthService, Organisation, User, Role } from '../services/auth.service'
   styleUrl: './control-dashboard.css',
 })
 export class ControlDashboard implements OnInit {
-  organisations: Organisation[] = [];
-  users: User[] = [];
-  roles: Role[] = ['CONTROL', 'ADMIN', 'USER'];
+  organisations = signal<Organisation[]>([]);
+  users = signal<User[]>([]);
+  roles: Role[] = [ROLES.CONTROL, ROLES.ADMIN, ROLES.USER];
 
   constructor(private authService: AuthService) {}
 
@@ -21,11 +21,15 @@ export class ControlDashboard implements OnInit {
 
   async loadData() {
     try {
-      this.organisations = await this.authService.listAllOrganisations();
-      this.users = await this.authService.listAllUsers();
+      const [orgs, users] = await Promise.all([
+        this.authService.listAllOrganisations(),
+        this.authService.listAllUsers(),
+      ]);
+      this.organisations.set(orgs);
+      this.users.set(users);
     } catch {
-      this.organisations = [];
-      this.users = [];
+      this.organisations.set([]);
+      this.users.set([]);
     }
   }
 

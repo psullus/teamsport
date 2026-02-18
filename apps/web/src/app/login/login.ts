@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -12,16 +12,16 @@ import { AuthService } from '../services/auth.service';
 export class Login {
   email = '';
   password = '';
-  error = '';
+  error = signal('');
 
   constructor(private authService: AuthService) {}
 
   async onSubmit() {
-    this.error = '';
+    this.error.set('');
     try {
       await this.authService.login(this.email, this.password);
     } catch (err: any) {
-      this.error = err?.error?.message || 'Login failed. Please try again.';
+      this.error.set(err?.error?.message || 'Login failed. Please try again.');
     }
   }
 }

@@ -1,14 +1,15 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { EMPTY, firstValueFrom, catchError } from 'rxjs';
+import { ROLES } from '@teamsport/shared';
 import type { Role, Organisation, User } from '@teamsport/shared';
 
+export { ROLES } from '@teamsport/shared';
 export type { Role, Organisation, User } from '@teamsport/shared';
 
 interface AuthResponse {
   user: User;
-  accessToken: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -17,11 +18,11 @@ export class AuthService {
 
   readonly user = this.currentUser.asReadonly();
   readonly isLoggedIn = computed(() => this.currentUser() !== null);
-  readonly isControl = computed(() => this.currentUser()?.role === 'CONTROL');
-  readonly isAdmin = computed(() => this.currentUser()?.role === 'ADMIN');
+  readonly isControl = computed(() => this.currentUser()?.role === ROLES.CONTROL);
+  readonly isAdmin = computed(() => this.currentUser()?.role === ROLES.ADMIN);
   readonly isAdminOrControl = computed(() => {
     const role = this.currentUser()?.role;
-    return role === 'ADMIN' || role === 'CONTROL';
+    return role === ROLES.ADMIN || role === ROLES.CONTROL;
   });
 
   constructor(
@@ -35,33 +36,35 @@ export class AuthService {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/signup', { organisationName, email, password }),
     );
-    localStorage.setItem('accessToken', res.accessToken);
     this.currentUser.set(res.user);
-    this.router.navigateByUrl('/verify-email-notice');
+    await this.router.navigateByUrl('/verify-email-notice');
   }
 
   async signupWithInvite(email: string, password: string, inviteToken: string): Promise<void> {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/signup/invite', { email, password, inviteToken }),
     );
-    localStorage.setItem('accessToken', res.accessToken);
     this.currentUser.set(res.user);
-    this.router.navigateByUrl('/');
+    await this.router.navigateByUrl('/');
   }
 
   async login(email: string, password: string): Promise<void> {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/login', { email, password }),
     );
-    localStorage.setItem('accessToken', res.accessToken);
     this.currentUser.set(res.user);
-    this.router.navigateByUrl('/');
+    await this.router.navigateByUrl('/');
   }
 
-  logout() {
-    localStorage.removeItem('accessToken');
-    this.currentUser.set(null);
-    this.router.navigateByUrl('/');
+  async logout(): Promise<void> {
+    try {
+      await firstValueFrom(this.http.post('/api/auth/logout', {}));
+    } catch {
+      // Server might not have this endpoint yet
+    } finally {
+      this.currentUser.set(null);
+      await this.router.navigateByUrl('/');
+    }
   }
 
   getUserInitials(): string {
@@ -80,89 +83,58 @@ export class AuthService {
   }
 
   async inviteUser(email: string): Promise<void> {
-    const token = localStorage.getItem('accessToken');
     await firstValueFrom(
-      this.http.post('/api/auth/invites', { email }, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.post('/api/auth/invites', { email }),
     );
   }
 
   async listOrgUsers(): Promise<User[]> {
-    const token = localStorage.getItem('accessToken');
     return firstValueFrom(
-      this.http.get<User[]>('/api/auth/org/users', {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.get<User[]>('/api/auth/org/users'),
     );
   }
 
   async listInvites(): Promise<any[]> {
-    const token = localStorage.getItem('accessToken');
     return firstValueFrom(
-      this.http.get<any[]>('/api/auth/invites', {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.get<any[]>('/api/auth/invites'),
     );
   }
 
   async listAllOrganisations(): Promise<Organisation[]> {
-    const token = localStorage.getItem('accessToken');
     return firstValueFrom(
-      this.http.get<Organisation[]>('/api/auth/organisations', {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.get<Organisation[]>('/api/auth/organisations'),
     );
   }
 
   async listAllUsers(): Promise<User[]> {
-    const token = localStorage.getItem('accessToken');
     return firstValueFrom(
-      this.http.get<User[]>('/api/auth/users', {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.get<User[]>('/api/auth/users'),
     );
   }
 
   async deleteUser(id: string): Promise<void> {
-    const token = localStorage.getItem('accessToken');
     await firstValueFrom(
-      this.http.delete(`/api/auth/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.delete(`/api/auth/users/${id}`),
     );
   }
 
   async deleteOrganisation(id: string): Promise<void> {
-    const token = localStorage.getItem('accessToken');
     await firstValueFrom(
-      this.http.delete(`/api/auth/organisations/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.delete(`/api/auth/organisations/${id}`),
     );
   }
 
   async changeUserRole(id: string, role: Role): Promise<User> {
-    const token = localStorage.getItem('accessToken');
     return firstValueFrom(
-      this.http.patch<User>(`/api/auth/users/${id}/role`, { role }, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      this.http.patch<User>(`/api/auth/users/${id}/role`, { role }),
     );
   }
 
-  private async restoreSession(): Promise<void> {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
-    try {
-      const user = await firstValueFrom(
-        this.http.get<User>('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      );
+  private restoreSession(): void {
+    this.http.get<User>('/api/auth/me').pipe(
+      catchError(() => EMPTY),
+    ).subscribe((user) => {
       this.currentUser.set(user);
-    } catch {
-      localStorage.removeItem('accessToken');
-    }
+    });
   }
 }
