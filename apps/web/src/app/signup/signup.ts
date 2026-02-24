@@ -11,6 +11,8 @@ import { AuthService } from '../services/auth.service';
 })
 export class Signup implements OnInit {
   organisationName = '';
+  clubName = '';
+  teamName = '';
   email = '';
   password = '';
   error = signal('');
@@ -31,7 +33,9 @@ export class Signup implements OnInit {
       if (this.inviteToken) {
         await this.authService.signupWithInvite(this.email, this.password, this.inviteToken);
       } else {
-        await this.authService.signup(this.organisationName, this.email, this.password);
+        await this.authService.signup(
+          this.organisationName, this.email, this.password, this.clubName, this.teamName,
+        );
       }
     } catch (err: any) {
       this.error.set(err?.error?.message || 'Signup failed. Please try again.');

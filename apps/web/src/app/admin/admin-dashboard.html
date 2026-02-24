@@ -1,6 +1,25 @@
 <div class="dashboard-page">
   <h1>Organisation dashboard</h1>
 
+  <nav class="tab-bar">
+    <button
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'members'"
+      (click)="setTab('members')"
+    >Members</button>
+    <button
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'clubs'"
+      (click)="setTab('clubs')"
+    >Clubs &amp; Teams</button>
+    <button
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'leagues'"
+      (click)="setTab('leagues')"
+    >Leagues</button>
+  </nav>
+
+  @if (activeTab() === 'members') {
   <section class="dashboard-section">
     <h2>Invite a member</h2>
     <form class="invite-form" (ngSubmit)="sendInvite()">
@@ -61,9 +80,479 @@
     } @else {
       <ul class="invite-list">
         @for (invite of invites(); track invite.id) {
-          <li>{{ invite.email }}</li>
+          <li>
+            {{ invite.email }}
+            <span class="invite-date">{{ invite.createdAt | date:'d MMM y' }}</span>
+          </li>
         }
       </ul>
     }
   </section>
+  }
+
+  @if (activeTab() === 'clubs') {
+  <section class="dashboard-section">
+    <h2>Clubs</h2>
+    <form class="invite-form" (ngSubmit)="createClub()">
+      <input
+        type="text"
+        [ngModel]="clubName()"
+        (ngModelChange)="clubName.set($event)"
+        name="clubName"
+        placeholder="New club name"
+        required
+      />
+      <button type="submit" class="btn btn-primary">Create club</button>
+    </form>
+    @if (clubs().length === 0) {
+      <p class="empty-state">No clubs yet.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (club of clubs(); track club.id) {
+          <li class="list-item-row">
+            @if (editingClubId() === club.id) {
+              <form class="inline-edit-form" (ngSubmit)="saveClubName()">
+                <input
+                  type="text"
+                  [ngModel]="editClubName()"
+                  (ngModelChange)="editClubName.set($event)"
+                  name="editClubName"
+                  required
+                />
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="button" class="btn-link" (click)="cancelEditClub()">Cancel</button>
+              </form>
+            } @else {
+              <button
+                class="btn-link"
+                [class.active]="selectedClub()?.id === club.id"
+                (click)="selectClub(club)"
+              >{{ club.name }}</button>
+              <span class="list-item-actions">
+                <button class="btn-link" (click)="startEditClub(club)">Edit</button>
+                <button class="btn-danger" (click)="deleteClub(club.id)">Delete</button>
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (selectedClub()) {
+    <section class="dashboard-section">
+      <h2>{{ selectedClub()!.name }} — Members</h2>
+      <form class="invite-form" (ngSubmit)="addUserToClub()">
+        <select
+          [ngModel]="addClubUserId()"
+          (ngModelChange)="addClubUserId.set($event)"
+          name="addClubUserId"
+        >
+          <option value="">Select a member…</option>
+          @for (user of users(); track user.id) {
+            <option [value]="user.id">{{ user.email }}</option>
+          }
+        </select>
+        <button type="submit" class="btn btn-primary">Add to club</button>
+      </form>
+      @if (clubMembers().length === 0) {
+        <p class="empty-state">No members in this club.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr><th>Email</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (member of clubMembers(); track member.id) {
+              <tr>
+                <td>{{ member.email }}</td>
+                <td>
+                  <button class="btn-danger" (click)="removeUserFromClub(member.id)">Remove</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <section class="dashboard-section">
+      <h2>{{ selectedClub()!.name }} — Teams</h2>
+      <form class="invite-form" (ngSubmit)="createTeam()">
+        <input
+          type="text"
+          [ngModel]="teamName()"
+          (ngModelChange)="teamName.set($event)"
+          name="teamName"
+          placeholder="New team name"
+          required
+        />
+        <button type="submit" class="btn btn-primary">Create team</button>
+      </form>
+      @if (teams().length === 0) {
+        <p class="empty-state">No teams yet.</p>
+      } @else {
+        <ul class="invite-list">
+          @for (team of teams(); track team.id) {
+            <li class="list-item-row">
+              @if (editingTeamId() === team.id) {
+                <form class="inline-edit-form" (ngSubmit)="saveTeamName()">
+                  <input
+                    type="text"
+                    [ngModel]="editTeamName()"
+                    (ngModelChange)="editTeamName.set($event)"
+                    name="editTeamName"
+                    required
+                  />
+                  <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                  <button type="button" class="btn-link" (click)="cancelEditTeam()">Cancel</button>
+                </form>
+              } @else {
+                <button
+                  class="btn-link"
+                  [class.active]="selectedTeam()?.id === team.id"
+                  (click)="selectTeam(team)"
+                >{{ team.name }}</button>
+                <span class="list-item-actions">
+                  <button class="btn-link" (click)="startEditTeam(team)">Edit</button>
+                  <button class="btn-danger" (click)="deleteTeam(team.id)">Delete</button>
+                </span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (selectedTeam()) {
+      <section class="dashboard-section">
+        <h2>{{ selectedTeam()!.name }} — Members</h2>
+        <form class="invite-form" (ngSubmit)="addUserToTeam()">
+          <select
+            [ngModel]="addTeamUserId()"
+            (ngModelChange)="addTeamUserId.set($event)"
+            name="addTeamUserId"
+          >
+            <option value="">Select a member…</option>
+            @for (user of users(); track user.id) {
+              <option [value]="user.id">{{ user.email }}</option>
+            }
+          </select>
+          <button type="submit" class="btn btn-primary">Add to team</button>
+        </form>
+        @if (teamMembers().length === 0) {
+          <p class="empty-state">No members in this team.</p>
+        } @else {
+          <table class="data-table">
+            <thead>
+              <tr><th>Email</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (member of teamMembers(); track member.id) {
+                <tr>
+                  <td>{{ member.email }}</td>
+                  <td>
+                    <button class="btn-danger" (click)="removeUserFromTeam(member.id)">Remove</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    }
+  }
+  }
+
+  @if (activeTab() === 'leagues') {
+  <section class="dashboard-section">
+    <h2>Leagues</h2>
+    <form class="invite-form" (ngSubmit)="createLeague()">
+      <input
+        type="text"
+        [ngModel]="leagueName()"
+        (ngModelChange)="leagueName.set($event)"
+        name="leagueName"
+        placeholder="League name"
+        required
+      />
+      <select
+        [ngModel]="leagueType()"
+        (ngModelChange)="leagueType.set($event)"
+        name="leagueType"
+      >
+        <option value="club">Club league</option>
+        <option value="team">Team league</option>
+      </select>
+      @if (leagueType() === 'team') {
+        <select
+          [ngModel]="leagueClubId()"
+          (ngModelChange)="leagueClubId.set($event)"
+          name="leagueClubId"
+        >
+          <option value="">Select club…</option>
+          @for (club of clubs(); track club.id) {
+            <option [value]="club.id">{{ club.name }}</option>
+          }
+        </select>
+      }
+      <button type="submit" class="btn btn-primary">Create league</button>
+    </form>
+    @if (leagues().length === 0) {
+      <p class="empty-state">No leagues yet.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (league of leagues(); track league.id) {
+          <li class="league-item">
+            <button
+              class="btn-link"
+              [class.active]="selectedLeague()?.id === league.id"
+              (click)="selectLeague(league)"
+            >{{ league.name }}</button>
+            <span class="badge">{{ league.type }}</span>
+            <button class="btn-danger" (click)="deleteLeague(league.id)">Delete</button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (selectedLeague() && leagueDetail()) {
+    <section class="dashboard-section">
+      <div class="section-header">
+        <h2>{{ selectedLeague()!.name }} — Fixtures</h2>
+        <button
+          class="btn btn-primary btn-sm"
+          (click)="generateRoundRobin()"
+        >Generate round robin</button>
+      </div>
+      <form class="invite-form" (ngSubmit)="createFixture()">
+        <select
+          [ngModel]="fixtureHomeId()"
+          (ngModelChange)="fixtureHomeId.set($event)"
+          name="fixtureHomeId"
+        >
+          <option value="">Home…</option>
+          @if (selectedLeague()!.type === 'club') {
+            @for (club of clubs(); track club.id) {
+              <option [value]="club.id">{{ club.name }}</option>
+            }
+          } @else {
+            @for (team of teams(); track team.id) {
+              <option [value]="team.id">{{ team.name }}</option>
+            }
+          }
+        </select>
+        <select
+          [ngModel]="fixtureAwayId()"
+          (ngModelChange)="fixtureAwayId.set($event)"
+          name="fixtureAwayId"
+        >
+          <option value="">Away…</option>
+          @if (selectedLeague()!.type === 'club') {
+            @for (club of clubs(); track club.id) {
+              <option [value]="club.id">{{ club.name }}</option>
+            }
+          } @else {
+            @for (team of teams(); track team.id) {
+              <option [value]="team.id">{{ team.name }}</option>
+            }
+          }
+        </select>
+        <input
+          type="datetime-local"
+          [ngModel]="fixtureDate()"
+          (ngModelChange)="fixtureDate.set($event)"
+          name="fixtureDate"
+        />
+        <button type="submit" class="btn btn-primary">Add fixture</button>
+      </form>
+
+      @if (leagueDetail()!.fixtures.length === 0) {
+        <p class="empty-state">No fixtures yet.</p>
+      } @else {
+        <table class="data-table fixtures-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Home</th>
+              <th>Away</th>
+              <th>Score</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fixture of leagueDetail()!.fixtures; track fixture.id) {
+              <tr>
+                <td>
+                  <input
+                    type="datetime-local"
+                    [ngModel]="toLocalDatetime(fixture.date)"
+                    (ngModelChange)="updateFixtureDate(fixture.id, $event)"
+                    name="fixtureDate-{{ fixture.id }}"
+                    class="fixture-date-input"
+                  />
+                </td>
+                <td>{{ fixture.homeName }}</td>
+                <td>{{ fixture.awayName }}</td>
+                <td class="score-cell">
+                  <input
+                    type="number"
+                    [ngModel]="fixture.homeScore"
+                    (ngModelChange)="updateFixtureScore(fixture.id, $event, fixture.awayScore ?? 0)"
+                    name="homeScore-{{ fixture.id }}"
+                    class="score-input"
+                    min="0"
+                    placeholder="—"
+                  />
+                  <span class="score-separator">–</span>
+                  <input
+                    type="number"
+                    [ngModel]="fixture.awayScore"
+                    (ngModelChange)="updateFixtureScore(fixture.id, fixture.homeScore ?? 0, $event)"
+                    name="awayScore-{{ fixture.id }}"
+                    class="score-input"
+                    min="0"
+                    placeholder="—"
+                  />
+                </td>
+                <td>
+                  <select
+                    [ngModel]="fixture.status"
+                    (ngModelChange)="updateFixtureStatus(fixture.id, $event)"
+                    name="fixtureStatus"
+                  >
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="no_show_home">No-show (home)</option>
+                    <option value="no_show_away">No-show (away)</option>
+                  </select>
+                </td>
+                <td>
+                  <button class="btn-danger" (click)="deleteFixture(fixture.id)">Delete</button>
+                </td>
+              </tr>
+              <tr class="goals-row">
+                <td colspan="6">
+                  <div class="goals-cell">
+                    <div class="goals-add">
+                      <select
+                        [ngModel]="getGoalScorerId(fixture.id)"
+                        (ngModelChange)="setGoalScorerId(fixture.id, $event)"
+                        name="goalScorer-{{ fixture.id }}"
+                      >
+                        <option value="">Add scorer…</option>
+                        @for (user of users(); track user.id) {
+                          <option [value]="user.id">{{ user.email }}</option>
+                        }
+                      </select>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        (click)="createGoal(fixture.id)"
+                      >Add scorer</button>
+                    </div>
+                    @if (groupedGoals(fixture.id).length) {
+                      <ul class="goals-list">
+                        @for (entry of groupedGoals(fixture.id); track entry.scorerId) {
+                          <li>
+                            <span>{{ entry.scorerName }}
+                              @if (entry.count > 1) {
+                                <strong>({{ entry.count }})</strong>
+                              }
+                            </span>
+                            <span class="scorer-controls">
+                              <button
+                                class="btn-icon"
+                                (click)="addGoalForScorer(fixture.id, entry.scorerId)"
+                              >+</button>
+                              <button
+                                class="btn-icon btn-icon--danger"
+                                (click)="deleteGoal(entry.goalIds[entry.goalIds.length - 1])"
+                              >−</button>
+                            </span>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Standings</h2>
+      @if (leagueDetail()!.standings.length === 0) {
+        <p class="empty-state">No standings data yet.</p>
+      } @else {
+        <table class="data-table standings-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>P</th>
+              <th>W</th>
+              <th>D</th>
+              <th>L</th>
+              <th>NS</th>
+              <th>SF</th>
+              <th>SA</th>
+              <th>SD</th>
+              <th>Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of leagueDetail()!.standings; track row.participantId) {
+              <tr>
+                <td>{{ row.participantName }}</td>
+                <td>{{ row.played }}</td>
+                <td>{{ row.won }}</td>
+                <td>{{ row.drawn }}</td>
+                <td>{{ row.lost }}</td>
+                <td>{{ row.noShows }}</td>
+                <td>{{ row.goalsFor }}</td>
+                <td>{{ row.goalsAgainst }}</td>
+                <td>{{ row.goalDifference }}</td>
+                <td>{{ row.points }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Top scorers</h2>
+      @if (leagueDetail()!.topScorers.length === 0) {
+        <p class="empty-state">No scores recorded yet.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>Scores</th><th>Matches</th></tr>
+          </thead>
+          <tbody>
+            @for (scorer of leagueDetail()!.topScorers; track scorer.userId) {
+              <tr>
+                <td>{{ scorer.name }}</td>
+                <td>{{ scorer.goals }}</td>
+                <td class="scorer-fixtures">
+                  @for (sf of scorer.fixtures; track sf.fixtureId) {
+                    <span class="scorer-fixture-badge">{{ sf.matchLabel }}
+                      @if (sf.goals > 1) {
+                        <strong>({{ sf.goals }})</strong>
+                      }
+                    </span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+  }
 </div>

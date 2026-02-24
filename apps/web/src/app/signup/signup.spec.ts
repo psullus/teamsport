@@ -52,6 +52,8 @@ describe('Signup', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('h1')?.textContent).toContain('Create your account');
     expect(el.querySelector('#organisationName')).toBeTruthy();
+    expect(el.querySelector('#clubName')).toBeTruthy();
+    expect(el.querySelector('#teamName')).toBeTruthy();
     expect(el.querySelector('#email')).toBeTruthy();
     expect(el.querySelector('#password')).toBeTruthy();
   });
@@ -62,6 +64,8 @@ describe('Signup', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
     component.organisationName = 'Test Club';
+    component.clubName = 'My Club';
+    component.teamName = 'My Team';
     component.email = 'test@example.com';
     component.password = 'password123';
     await component.onSubmit();
@@ -69,6 +73,8 @@ describe('Signup', () => {
       'Test Club',
       'test@example.com',
       'password123',
+      'My Club',
+      'My Team',
     );
   });
 
@@ -95,13 +101,15 @@ describe('Signup', () => {
   });
 
   describe('invite flow', () => {
-    it('should hide org name field when invite token is present', async () => {
+    it('should hide org/club/team name fields when invite token is present', async () => {
       setup({ invite: 'some-invite-uuid' });
       const fixture = TestBed.createComponent(Signup);
       fixture.detectChanges();
       await fixture.whenStable();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('#organisationName')).toBeNull();
+      expect(el.querySelector('#clubName')).toBeNull();
+      expect(el.querySelector('#teamName')).toBeNull();
       expect(el.querySelector('h1')?.textContent).toContain('Join your team');
       expect(el.querySelector('button[type="submit"]')?.textContent).toContain('Join team');
     });

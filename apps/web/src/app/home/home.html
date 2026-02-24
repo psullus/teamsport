@@ -1,27 +1,185 @@
-<section class="hero">
-  <h1>Where teams come together</h1>
-  <p class="hero-subtitle">
-    A simpler way to organize, communicate, and get things done — so your team can focus on what matters.
-  </p>
-  <div class="hero-actions">
-    <a class="btn btn-primary btn-lg" routerLink="/signup">Sign Up</a>
-    <a class="btn btn-secondary btn-lg" routerLink="/login">Sign In</a>
-  </div>
-</section>
+@if (auth.isLoggedIn()) {
+  <div class="dashboard">
+    <h1 class="dashboard-heading">Welcome, {{ auth.user()?.firstName ?? 'there' }}</h1>
 
-<section class="features">
-  <div class="features-grid">
-    <div class="feature-card">
-      <h3>Effortless coordination</h3>
-      <p>Keep everyone aligned with shared schedules, tasks, and updates in one place.</p>
-    </div>
-    <div class="feature-card">
-      <h3>Thoughtful communication</h3>
-      <p>Threaded discussions that stay organized, so nothing important gets lost in the noise.</p>
-    </div>
-    <div class="feature-card">
-      <h3>Built for focus</h3>
-      <p>Minimal by design. No clutter, no distractions — just the tools your team actually needs.</p>
-    </div>
+    @if (loading()) {
+      <p class="dashboard-loading">Loading your clubs...</p>
+    } @else if (error()) {
+      <div class="dashboard-error">
+        <p>{{ error() }}</p>
+        <button class="btn btn-primary" (click)="loadClubs()">Retry</button>
+      </div>
+    } @else if (clubs().length === 0) {
+      <div class="dashboard-empty">
+        <p>You are not a member of any clubs yet.</p>
+      </div>
+    } @else {
+      <div class="dashboard-layout">
+        <aside class="club-sidebar">
+          <h2 class="sidebar-heading">Clubs</h2>
+          <ul class="club-list">
+            @for (club of clubs(); track club.id) {
+              <li>
+                <button
+                  class="club-item"
+                  [class.club-item--active]="selectedClub()?.id === club.id"
+                  (click)="selectClub(club)"
+                >
+                  {{ club.name }}
+                </button>
+              </li>
+            }
+          </ul>
+        </aside>
+
+        <main class="teams-area">
+          <h2 class="teams-heading">{{ selectedClub()?.name }} — Teams</h2>
+          @if (selectedTeams().length === 0) {
+            <p class="teams-empty">No teams in this club yet.</p>
+          } @else {
+            <div class="teams-grid">
+              @for (team of selectedTeams(); track team.id) {
+                <button
+                  class="team-card"
+                  [class.team-card--active]="selectedTeam()?.id === team.id"
+                  (click)="selectTeam(team)"
+                >
+                  <h3>{{ team.name }}</h3>
+                </button>
+              }
+            </div>
+            @if (selectedTeam()) {
+              <section class="team-members">
+                <h3 class="team-members-heading">{{ selectedTeam()!.name }} — Members</h3>
+                @if (teamMembers().length === 0) {
+                  <p class="teams-empty">No members in this team.</p>
+                } @else {
+                  <ul class="member-list">
+                    @for (member of teamMembers(); track member.id) {
+                      <li class="member-item">
+                        <span class="member-name">{{ member.firstName ?? '' }} {{ member.lastName ?? '' }}</span>
+                        <span class="member-email">{{ member.email }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </section>
+            }
+          }
+        </main>
+      </div>
+
+      @if (leagues().length > 0) {
+        <section class="leagues-section">
+          <h2 class="leagues-heading">Leagues</h2>
+          <div class="leagues-grid">
+            @for (league of leagues(); track league.id) {
+              <button
+                class="league-card"
+                [class.league-card--active]="selectedLeague()?.id === league.id"
+                (click)="selectLeague(league)"
+              >
+                <h3>{{ league.name }}</h3>
+                <span class="league-type-badge">{{ league.type }}</span>
+              </button>
+            }
+          </div>
+
+          @if (selectedLeague() && leagueDetail()) {
+            <div class="league-detail">
+              <h3 class="league-detail-heading">{{ selectedLeague()!.name }} — Standings</h3>
+              @if (leagueDetail()!.standings.length === 0) {
+                <p class="teams-empty">No standings data yet.</p>
+              } @else {
+                <table class="standings-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>P</th>
+                      <th>W</th>
+                      <th>D</th>
+                      <th>L</th>
+                      <th>GD</th>
+                      <th>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of leagueDetail()!.standings; track row.participantId) {
+                      <tr>
+                        <td>{{ row.participantName }}</td>
+                        <td>{{ row.played }}</td>
+                        <td>{{ row.won }}</td>
+                        <td>{{ row.drawn }}</td>
+                        <td>{{ row.lost }}</td>
+                        <td>{{ row.goalDifference }}</td>
+                        <td>{{ row.points }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+
+              <h3 class="league-detail-heading">Fixtures</h3>
+              @if (leagueDetail()!.fixtures.length === 0) {
+                <p class="teams-empty">No fixtures yet.</p>
+              } @else {
+                <ul class="fixture-list">
+                  @for (fixture of leagueDetail()!.fixtures; track fixture.id) {
+                    <li class="fixture-item">
+                      <span class="fixture-teams">{{ fixture.homeName }} vs {{ fixture.awayName }}</span>
+                      @if (fixture.homeScore !== null) {
+                        <span class="fixture-score">{{ fixture.homeScore }} - {{ fixture.awayScore }}</span>
+                      } @else {
+                        <span class="fixture-score">—</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+
+              @if (leagueDetail()!.topScorers.length > 0) {
+                <h3 class="league-detail-heading">Top scorers</h3>
+                <ul class="top-scorers-list">
+                  @for (scorer of leagueDetail()!.topScorers; track scorer.userId) {
+                    <li class="scorer-item">
+                      <span class="scorer-name">{{ scorer.name }}</span>
+                      <span class="scorer-goals">{{ scorer.goals }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </section>
+      }
+    }
   </div>
-</section>
+} @else {
+  <section class="hero">
+    <h1>Where teams come together</h1>
+    <p class="hero-subtitle">
+      A simpler way to organize, communicate, and get things done — so your team can focus on what matters.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary btn-lg" routerLink="/signup">Sign Up</a>
+      <a class="btn btn-secondary btn-lg" routerLink="/login">Sign In</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="features-grid">
+      <div class="feature-card">
+        <h3>Effortless coordination</h3>
+        <p>Keep everyone aligned with shared schedules, tasks, and updates in one place.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Thoughtful communication</h3>
+        <p>Threaded discussions that stay organized, so nothing important gets lost in the noise.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Built for focus</h3>
+        <p>Minimal by design. No clutter, no distractions — just the tools your team actually needs.</p>
+      </div>
+    </div>
+  </section>
+}

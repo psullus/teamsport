@@ -7,6 +7,8 @@ import { AuthService, toUserResponse } from './auth.service';
 import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
+import { ClubEntity } from './entities/club.entity';
+import { TeamEntity } from './entities/team.entity';
 
 const mockUserRepo = {
   findOne: vi.fn(),
@@ -25,6 +27,16 @@ const mockEmailTokenRepo = {
   create: vi.fn((data) => data),
   save: vi.fn((entity) => Promise.resolve(entity)),
   remove: vi.fn(),
+};
+
+const mockClubRepo = {
+  create: vi.fn((data) => ({ ...data, id: 'club-1' })),
+  save: vi.fn((entity) => Promise.resolve(entity)),
+};
+
+const mockTeamRepo = {
+  create: vi.fn((data) => ({ ...data, id: 'team-1' })),
+  save: vi.fn((entity) => Promise.resolve(entity)),
 };
 
 const mockJwtService = {
@@ -47,6 +59,8 @@ describe('AuthService', () => {
           provide: getRepositoryToken(EmailVerificationTokenEntity),
           useValue: mockEmailTokenRepo,
         },
+        { provide: getRepositoryToken(ClubEntity), useValue: mockClubRepo },
+        { provide: getRepositoryToken(TeamEntity), useValue: mockTeamRepo },
         { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
@@ -62,6 +76,10 @@ describe('AuthService', () => {
         emailVerified: false,
         role: 'ADMIN' as const,
         organisation: { id: 'o1', name: 'Org' },
+        firstName: null,
+        lastName: null,
+        phone: null,
+        avatarPath: null,
       } as UserEntity;
 
       const result = toUserResponse(entity);
@@ -73,7 +91,32 @@ describe('AuthService', () => {
         email: 'a@b.com',
         emailVerified: false,
         role: 'ADMIN',
+        firstName: null,
+        lastName: null,
+        phone: null,
+        avatarUrl: null,
       });
+    });
+
+    it('should map avatarPath to avatarUrl', () => {
+      const entity = {
+        id: 'u1',
+        email: 'a@b.com',
+        emailVerified: false,
+        role: 'ADMIN' as const,
+        organisation: { id: 'o1', name: 'Org' },
+        firstName: 'John',
+        lastName: 'Doe',
+        phone: '555-1234',
+        avatarPath: 'avatars/abc.jpg',
+      } as UserEntity;
+
+      const result = toUserResponse(entity);
+
+      expect(result.firstName).toBe('John');
+      expect(result.lastName).toBe('Doe');
+      expect(result.phone).toBe('555-1234');
+      expect(result.avatarUrl).toBe('/api/uploads/avatars/abc.jpg');
     });
   });
 
@@ -91,20 +134,30 @@ describe('AuthService', () => {
       });
       mockUserRepo.save.mockImplementation((e) => Promise.resolve(e));
       mockEmailTokenRepo.create.mockReturnValue({ token: 'tok' });
+      mockClubRepo.create.mockReturnValue({ id: 'club-1', name: 'My Club' });
+      mockClubRepo.save.mockImplementation((e) => Promise.resolve(e));
+      mockTeamRepo.create.mockReturnValue({ id: 'team-1', name: 'My Team' });
+      mockTeamRepo.save.mockImplementation((e) => Promise.resolve(e));
 
-      const result = await service.signup('Test Org', 'a@b.com', 'password123');
+      const result = await service.signup(
+        'Test Org', 'a@b.com', 'password123', 'My Club', 'My Team',
+      );
 
       expect(result.user.email).toBe('a@b.com');
       expect(result.user.role).toBe('ADMIN');
       expect(result.token).toBe('signed-jwt');
       expect(mockOrgRepo.save).toHaveBeenCalled();
       expect(mockUserRepo.save).toHaveBeenCalled();
+      expect(mockClubRepo.save).toHaveBeenCalled();
+      expect(mockTeamRepo.save).toHaveBeenCalled();
     });
 
     it('should throw ConflictException if email exists', async () => {
       mockUserRepo.findOne.mockResolvedValue({ id: 'existing' });
 
-      await expect(service.signup('Org', 'a@b.com', 'pass')).rejects.toThrow(ConflictException);
+      await expect(
+        service.signup('Org', 'a@b.com', 'pass', 'Club', 'Team'),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

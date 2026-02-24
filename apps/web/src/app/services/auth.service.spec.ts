@@ -11,6 +11,10 @@ const mockUser = (overrides: Record<string, unknown> = {}) => ({
   email: 'test@example.com',
   emailVerified: false,
   role: 'ADMIN' as const,
+  firstName: null,
+  lastName: null,
+  phone: null,
+  avatarUrl: null,
   ...overrides,
 });
 
@@ -49,7 +53,7 @@ describe('AuthService', () => {
   });
 
   it('should sign up via HTTP and navigate to /verify-email-notice', async () => {
-    const promise = service.signup('My Org', 'test@example.com', 'pass1234');
+    const promise = service.signup('My Org', 'test@example.com', 'pass1234', 'Club', 'Team');
 
     const req = httpTesting.expectOne('/api/auth/signup');
     expect(req.request.method).toBe('POST');
@@ -57,6 +61,8 @@ describe('AuthService', () => {
       organisationName: 'My Org',
       email: 'test@example.com',
       password: 'pass1234',
+      clubName: 'Club',
+      teamName: 'Team',
     });
     req.flush({ user: mockUser() });
 
@@ -125,7 +131,7 @@ describe('AuthService', () => {
 
   it('should logout via POST, clear user, and navigate to /', async () => {
     // First log in
-    const loginPromise = service.signup('Org', 'a@b.com', 'password');
+    const loginPromise = service.signup('Org', 'a@b.com', 'password', 'Club', 'Team');
     httpTesting.expectOne('/api/auth/signup').flush({ user: mockUser() });
     await loginPromise;
 
@@ -143,7 +149,7 @@ describe('AuthService', () => {
   });
 
   it('should return user initials from organisationName', async () => {
-    const promise = service.signup('River Valley FC', 'rv@example.com', 'password');
+    const promise = service.signup('River Valley FC', 'rv@example.com', 'password', 'Club', 'Team');
     httpTesting.expectOne('/api/auth/signup').flush({
       user: mockUser({ organisationName: 'River Valley FC', email: 'rv@example.com' }),
     });
@@ -240,6 +246,160 @@ describe('AuthService', () => {
 
     const result = await promise;
     expect(result.role).toBe('ADMIN');
+  });
+
+  it('should list my clubs via HTTP GET', async () => {
+    const clubs = [
+      {
+        id: 'club-1', name: 'Club A', organisationId: 'org-1',
+        teams: [{ id: 'team-1', name: 'Team A1', clubId: 'club-1' }],
+      },
+    ];
+    const promise = service.listMyClubs();
+
+    const req = httpTesting.expectOne('/api/auth/me/clubs');
+    expect(req.request.method).toBe('GET');
+    req.flush(clubs);
+
+    const result = await promise;
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Club A');
+    expect(result[0].teams).toHaveLength(1);
+  });
+
+  it('should update profile via PATCH and update currentUser signal', async () => {
+    const formData = new FormData();
+    formData.append('firstName', 'John');
+    const promise = service.updateProfile(formData);
+
+    const req = httpTesting.expectOne('/api/auth/profile');
+    expect(req.request.method).toBe('PATCH');
+    req.flush(mockUser({ firstName: 'John' }));
+
+    const result = await promise;
+    expect(result.firstName).toBe('John');
+    expect(service.user()?.firstName).toBe('John');
+  });
+
+  it('should remove avatar via DELETE and update currentUser signal', async () => {
+    // First log in
+    const loginPromise = service.login('a@b.com', 'password');
+    httpTesting.expectOne('/api/auth/login').flush({
+      user: mockUser({ avatarUrl: '/api/uploads/avatars/old.jpg' }),
+    });
+    await loginPromise;
+
+    const promise = service.removeAvatar();
+
+    const req = httpTesting.expectOne('/api/auth/profile/avatar');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(mockUser({ avatarUrl: null }));
+
+    const result = await promise;
+    expect(result.avatarUrl).toBeNull();
+    expect(service.user()?.avatarUrl).toBeNull();
+  });
+
+  it('should list leagues via HTTP GET', async () => {
+    const promise = service.listLeagues();
+
+    const req = httpTesting.expectOne('/api/auth/leagues');
+    expect(req.request.method).toBe('GET');
+    req.flush([{ id: 'l1', name: 'Spring', type: 'club' }]);
+
+    const result = await promise;
+    expect(result).toHaveLength(1);
+  });
+
+  it('should get league detail via HTTP GET', async () => {
+    const promise = service.getLeagueDetail('league-1');
+
+    const req = httpTesting.expectOne('/api/auth/leagues/league-1');
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      league: { id: 'league-1', name: 'Spring' },
+      fixtures: [], standings: [], topScorers: [],
+    });
+
+    const result = await promise;
+    expect(result.league.name).toBe('Spring');
+  });
+
+  it('should create league via HTTP POST', async () => {
+    const promise = service.createLeague('Spring', 'club');
+
+    const req = httpTesting.expectOne('/api/auth/leagues');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ name: 'Spring', type: 'club', clubId: undefined });
+    req.flush({ id: 'l1', name: 'Spring', type: 'club' });
+
+    const result = await promise;
+    expect(result.name).toBe('Spring');
+  });
+
+  it('should delete league via HTTP DELETE', async () => {
+    const promise = service.deleteLeague('league-1');
+
+    const req = httpTesting.expectOne('/api/auth/leagues/league-1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ success: true });
+
+    await promise;
+  });
+
+  it('should create fixture via HTTP POST', async () => {
+    const promise = service.createFixture('league-1', 'club-1', 'club-2');
+
+    const req = httpTesting.expectOne('/api/auth/leagues/league-1/fixtures');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ homeId: 'club-1', awayId: 'club-2', date: undefined });
+    req.flush({ id: 'f1', homeId: 'club-1', awayId: 'club-2', status: 'scheduled' });
+
+    const result = await promise;
+    expect(result.homeId).toBe('club-1');
+  });
+
+  it('should update fixture via HTTP PATCH', async () => {
+    const promise = service.updateFixture('fixture-1', { homeScore: 2, awayScore: 1 });
+
+    const req = httpTesting.expectOne('/api/auth/fixtures/fixture-1');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ id: 'fixture-1', homeScore: 2, awayScore: 1, status: 'completed' });
+
+    const result = await promise;
+    expect(result.homeScore).toBe(2);
+  });
+
+  it('should delete fixture via HTTP DELETE', async () => {
+    const promise = service.deleteFixture('fixture-1');
+
+    const req = httpTesting.expectOne('/api/auth/fixtures/fixture-1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ success: true });
+
+    await promise;
+  });
+
+  it('should create goal via HTTP POST', async () => {
+    const promise = service.createGoal('fixture-1', 'user-1');
+
+    const req = httpTesting.expectOne('/api/auth/fixtures/fixture-1/goals');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ scorerId: 'user-1' });
+    req.flush({ id: 'g1', fixtureId: 'fixture-1', scorerId: 'user-1', scorerName: 'John' });
+
+    const result = await promise;
+    expect(result.scorerName).toBe('John');
+  });
+
+  it('should delete goal via HTTP DELETE', async () => {
+    const promise = service.deleteGoal('goal-1');
+
+    const req = httpTesting.expectOne('/api/auth/goals/goal-1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ success: true });
+
+    await promise;
   });
 });
 

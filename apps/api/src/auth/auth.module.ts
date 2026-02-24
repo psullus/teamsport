@@ -7,10 +7,18 @@ import { AuthService } from './auth.service';
 import { UserService } from './user.service';
 import { OrganisationService } from './organisation.service';
 import { InviteService } from './invite.service';
+import { ClubService } from './club.service';
+import { TeamService } from './team.service';
+import { LeagueService } from './league.service';
 import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
 import { InviteEntity } from './entities/invite.entity';
+import { ClubEntity } from './entities/club.entity';
+import { TeamEntity } from './entities/team.entity';
+import { LeagueEntity } from './entities/league.entity';
+import { FixtureEntity } from './entities/fixture.entity';
+import { GoalEntity } from './entities/goal.entity';
 
 @Module({
   imports: [
@@ -19,6 +27,11 @@ import { InviteEntity } from './entities/invite.entity';
       OrganisationEntity,
       EmailVerificationTokenEntity,
       InviteEntity,
+      ClubEntity,
+      TeamEntity,
+      LeagueEntity,
+      FixtureEntity,
+      GoalEntity,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -30,7 +43,10 @@ import { InviteEntity } from './entities/invite.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, OrganisationService, InviteService],
+  providers: [
+    AuthService, UserService, OrganisationService, InviteService,
+    ClubService, TeamService, LeagueService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

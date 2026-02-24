@@ -40,6 +40,9 @@ testem.log
 typings/
 __screenshots__/
 
+# Uploads
+apps/api/uploads/
+
 # Environment
 .env
 

@@ -6,6 +6,19 @@ import { signal, computed } from '@angular/core';
 import { AuthService, User } from '../services/auth.service';
 import { ProfileMenu } from './profile-menu';
 
+const defaultUser: User = {
+  id: '1',
+  organisationName: 'Test',
+  organisationId: 'org-1',
+  email: 'a@b.com',
+  emailVerified: true,
+  role: 'ADMIN',
+  firstName: null,
+  lastName: null,
+  phone: null,
+  avatarUrl: null,
+};
+
 function createMockAuthService() {
   const currentUser = signal<User | null>(null);
   return {
@@ -53,22 +66,19 @@ describe('ProfileMenu', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should show "Get started" link when logged out', async () => {
+  it('should show nothing when logged out', async () => {
     const fixture = TestBed.createComponent(ProfileMenu);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.btn-primary')?.textContent).toContain('Get started');
+    expect(el.querySelector('.btn-primary')).toBeNull();
     expect(el.querySelector('.avatar')).toBeNull();
   });
 
   it('should show avatar when logged in', async () => {
     authService._setUser({
-      id: '1',
+      ...defaultUser,
       organisationName: 'Test Club',
-      organisationId: 'org-1',
       email: 'test@test.com',
-      emailVerified: true,
-      role: 'ADMIN',
     });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.detectChanges();
@@ -80,12 +90,9 @@ describe('ProfileMenu', () => {
 
   it('should display user initials in avatar', async () => {
     authService._setUser({
-      id: '1',
+      ...defaultUser,
       organisationName: 'John Doe',
-      organisationId: 'org-1',
       email: 'jd@test.com',
-      emailVerified: true,
-      role: 'ADMIN',
     });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.detectChanges();
@@ -95,14 +102,7 @@ describe('ProfileMenu', () => {
   });
 
   it('should open dropdown when avatar is clicked', async () => {
-    authService._setUser({
-      id: '1',
-      organisationName: 'Test',
-      organisationId: 'org-1',
-      email: 'a@b.com',
-      emailVerified: true,
-      role: 'ADMIN',
-    });
+    authService._setUser({ ...defaultUser });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -114,14 +114,7 @@ describe('ProfileMenu', () => {
   });
 
   it('should set aria-expanded on avatar', async () => {
-    authService._setUser({
-      id: '1',
-      organisationName: 'Test',
-      organisationId: 'org-1',
-      email: 'a@b.com',
-      emailVerified: true,
-      role: 'ADMIN',
-    });
+    authService._setUser({ ...defaultUser });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -135,12 +128,9 @@ describe('ProfileMenu', () => {
 
   it('should show organisation name, email, and role in dropdown', async () => {
     authService._setUser({
-      id: '1',
+      ...defaultUser,
       organisationName: 'River Valley FC',
-      organisationId: 'org-1',
       email: 'rv@example.com',
-      emailVerified: true,
-      role: 'ADMIN',
     });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.componentInstance.isOpen.set(true);
@@ -153,14 +143,7 @@ describe('ProfileMenu', () => {
   });
 
   it('should call authService.logout and close dropdown', async () => {
-    authService._setUser({
-      id: '1',
-      organisationName: 'Test',
-      organisationId: 'org-1',
-      email: 'a@b.com',
-      emailVerified: true,
-      role: 'ADMIN',
-    });
+    authService._setUser({ ...defaultUser });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.componentInstance.isOpen.set(true);
     fixture.detectChanges();
@@ -176,14 +159,7 @@ describe('ProfileMenu', () => {
   });
 
   it('should close dropdown on document click', async () => {
-    authService._setUser({
-      id: '1',
-      organisationName: 'Test',
-      organisationId: 'org-1',
-      email: 'a@b.com',
-      emailVerified: true,
-      role: 'ADMIN',
-    });
+    authService._setUser({ ...defaultUser });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.componentInstance.isOpen.set(true);
     fixture.detectChanges();
@@ -196,11 +172,10 @@ describe('ProfileMenu', () => {
 
   it('should show "Control panel" link for CONTROL user', async () => {
     authService._setUser({
-      id: '1',
+      ...defaultUser,
       organisationName: 'System',
       organisationId: 'sys-org',
       email: 'ctrl@system.com',
-      emailVerified: true,
       role: 'CONTROL',
     });
     const fixture = TestBed.createComponent(ProfileMenu);
@@ -218,12 +193,9 @@ describe('ProfileMenu', () => {
 
   it('should show "Organisation dashboard" link for ADMIN user', async () => {
     authService._setUser({
-      id: '1',
+      ...defaultUser,
       organisationName: 'Test FC',
-      organisationId: 'org-1',
       email: 'admin@test.com',
-      emailVerified: true,
-      role: 'ADMIN',
     });
     const fixture = TestBed.createComponent(ProfileMenu);
     fixture.componentInstance.isOpen.set(true);
@@ -240,11 +212,9 @@ describe('ProfileMenu', () => {
 
   it('should not show dashboard links for USER role', async () => {
     authService._setUser({
-      id: '1',
+      ...defaultUser,
       organisationName: 'Test FC',
-      organisationId: 'org-1',
       email: 'user@test.com',
-      emailVerified: true,
       role: 'USER',
     });
     const fixture = TestBed.createComponent(ProfileMenu);
@@ -258,5 +228,50 @@ describe('ProfileMenu', () => {
     const adminItem = items.find((el) => el.textContent?.includes('Organisation dashboard'));
     expect(controlItem).toBeFalsy();
     expect(adminItem).toBeFalsy();
+  });
+
+  it('should render "View profile" as a link to /profile', async () => {
+    authService._setUser({ ...defaultUser });
+    const fixture = TestBed.createComponent(ProfileMenu);
+    fixture.componentInstance.isOpen.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const items = Array.from(
+      fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
+    );
+    const profileItem = items.find((el) => el.textContent?.includes('View profile'));
+    expect(profileItem).toBeTruthy();
+    expect(profileItem?.tagName).toBe('A');
+    expect(profileItem?.getAttribute('href')).toBe('/profile');
+  });
+
+  it('should render Help as a link to /help', async () => {
+    authService._setUser({ ...defaultUser });
+    const fixture = TestBed.createComponent(ProfileMenu);
+    fixture.componentInstance.isOpen.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const items = Array.from(
+      fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
+    );
+    const helpItem = items.find((el) => el.textContent?.includes('Help'));
+    expect(helpItem).toBeTruthy();
+    expect(helpItem?.tagName).toBe('A');
+    expect(helpItem?.getAttribute('href')).toBe('/help');
+  });
+
+  it('should render Settings as a link to /settings', async () => {
+    authService._setUser({ ...defaultUser });
+    const fixture = TestBed.createComponent(ProfileMenu);
+    fixture.componentInstance.isOpen.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const items = Array.from(
+      fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
+    );
+    const settingsItem = items.find((el) => el.textContent?.includes('Settings'));
+    expect(settingsItem).toBeTruthy();
+    expect(settingsItem?.tagName).toBe('A');
+    expect(settingsItem?.getAttribute('href')).toBe('/settings');
   });
 });

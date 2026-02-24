@@ -4,6 +4,12 @@ export class SignupDto {
   @IsNotEmpty()
   organisationName!: string;
 
+  @IsNotEmpty()
+  clubName!: string;
+
+  @IsNotEmpty()
+  teamName!: string;
+
   @IsEmail()
   email!: string;
 

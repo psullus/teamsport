@@ -14,6 +14,8 @@ import type { User } from '@teamsport/shared';
 import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
+import { ClubEntity } from './entities/club.entity';
+import { TeamEntity } from './entities/team.entity';
 
 const SALT_ROUNDS = 10;
 
@@ -25,6 +27,10 @@ export function toUserResponse(user: UserEntity): User {
     email: user.email,
     emailVerified: user.emailVerified,
     role: user.role,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    phone: user.phone ?? null,
+    avatarUrl: user.avatarPath ? `/api/uploads/${user.avatarPath}` : null,
   };
 }
 
@@ -37,6 +43,10 @@ export class AuthService {
     private orgRepo: Repository<OrganisationEntity>,
     @InjectRepository(EmailVerificationTokenEntity)
     private emailTokenRepo: Repository<EmailVerificationTokenEntity>,
+    @InjectRepository(ClubEntity)
+    private clubRepo: Repository<ClubEntity>,
+    @InjectRepository(TeamEntity)
+    private teamRepo: Repository<TeamEntity>,
     private jwtService: JwtService,
   ) {}
 
@@ -44,6 +54,8 @@ export class AuthService {
     organisationName: string,
     email: string,
     password: string,
+    clubName: string,
+    teamName: string,
   ): Promise<{ user: User; token: string }> {
     const existing = await this.userRepo.findOne({ where: { email } });
     if (existing) {
@@ -53,6 +65,12 @@ export class AuthService {
     const org = this.orgRepo.create({ name: organisationName });
     await this.orgRepo.save(org);
 
+    const club = this.clubRepo.create({ name: clubName, organisation: org });
+    await this.clubRepo.save(club);
+
+    const team = this.teamRepo.create({ name: teamName, club });
+    await this.teamRepo.save(team);
+
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const user = this.userRepo.create({
       email,
@@ -61,6 +79,11 @@ export class AuthService {
       organisation: org,
     });
     await this.userRepo.save(user);
+
+    club.members = [user];
+    await this.clubRepo.save(club);
+    team.members = [user];
+    await this.teamRepo.save(team);
 
     await this.createEmailVerificationToken(user);
 

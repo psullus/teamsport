@@ -9,7 +9,7 @@
   "scripts": {
     "ng": "ng",
     "start": "npm run start:web & npm run start:api",
-    "start:web": "ng serve",
+    "start:web": "ng serve --port 4300",
     "start:api": "npm -w apps/api run start:dev",
     "build": "npm run build:web && npm run build:api",
     "build:web": "ng build",

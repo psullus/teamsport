@@ -4,8 +4,10 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  Relation,
 } from 'typeorm';
-import { UserEntity } from './user.entity';
+import type { UserEntity } from './user.entity';
+import type { ClubEntity } from './club.entity';
 
 @Entity('organisations')
 export class OrganisationEntity {
@@ -15,8 +17,11 @@ export class OrganisationEntity {
   @Column()
   name!: string;
 
-  @OneToMany(() => UserEntity, (user) => user.organisation)
-  users!: UserEntity[];
+  @OneToMany('UserEntity', 'organisation')
+  users!: Relation<UserEntity[]>;
+
+  @OneToMany('ClubEntity', 'organisation')
+  clubs!: Relation<ClubEntity[]>;
 
   @CreateDateColumn()
   createdAt!: Date;

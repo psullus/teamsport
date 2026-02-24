@@ -3,10 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { EMPTY, firstValueFrom, catchError } from 'rxjs';
 import { ROLES } from '@teamsport/shared';
-import type { Role, Organisation, User } from '@teamsport/shared';
+import type {
+  Role, Organisation, User, Club, Team, ClubWithTeams,
+  League, LeagueDetail, Fixture, Goal,
+} from '@teamsport/shared';
 
 export { ROLES } from '@teamsport/shared';
-export type { Role, Organisation, User } from '@teamsport/shared';
+export type {
+  Role, Organisation, User, Club, Team, ClubWithTeams,
+  League, LeagueDetail, LeagueType, FixtureStatus, Fixture, Goal,
+  ScorerFixture, StandingsRow, TopScorer,
+} from '@teamsport/shared';
 
 interface AuthResponse {
   user: User;
@@ -32,9 +39,17 @@ export class AuthService {
     this.restoreSession();
   }
 
-  async signup(organisationName: string, email: string, password: string): Promise<void> {
+  async signup(
+    organisationName: string,
+    email: string,
+    password: string,
+    clubName: string,
+    teamName: string,
+  ): Promise<void> {
     const res = await firstValueFrom(
-      this.http.post<AuthResponse>('/api/auth/signup', { organisationName, email, password }),
+      this.http.post<AuthResponse>('/api/auth/signup', {
+        organisationName, email, password, clubName, teamName,
+      }),
     );
     this.currentUser.set(res.user);
     await this.router.navigateByUrl('/verify-email-notice');
@@ -128,6 +143,137 @@ export class AuthService {
     return firstValueFrom(
       this.http.patch<User>(`/api/auth/users/${id}/role`, { role }),
     );
+  }
+
+  async listClubs(): Promise<Club[]> {
+    return firstValueFrom(this.http.get<Club[]>('/api/auth/clubs'));
+  }
+
+  async createClub(name: string): Promise<Club> {
+    return firstValueFrom(this.http.post<Club>('/api/auth/clubs', { name }));
+  }
+
+  async listClubUsers(clubId: string): Promise<User[]> {
+    return firstValueFrom(this.http.get<User[]>(`/api/auth/clubs/${clubId}/users`));
+  }
+
+  async addUserToClub(clubId: string, userId: string): Promise<void> {
+    await firstValueFrom(this.http.post(`/api/auth/clubs/${clubId}/users`, { userId }));
+  }
+
+  async removeUserFromClub(clubId: string, userId: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/clubs/${clubId}/users/${userId}`));
+  }
+
+  async renameClub(clubId: string, name: string): Promise<Club> {
+    return firstValueFrom(this.http.patch<Club>(`/api/auth/clubs/${clubId}`, { name }));
+  }
+
+  async deleteClub(clubId: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/clubs/${clubId}`));
+  }
+
+  async listTeams(clubId: string): Promise<Team[]> {
+    return firstValueFrom(this.http.get<Team[]>(`/api/auth/clubs/${clubId}/teams`));
+  }
+
+  async createTeam(name: string, clubId: string): Promise<Team> {
+    return firstValueFrom(this.http.post<Team>('/api/auth/teams', { name, clubId }));
+  }
+
+  async listTeamUsers(teamId: string): Promise<User[]> {
+    return firstValueFrom(this.http.get<User[]>(`/api/auth/teams/${teamId}/users`));
+  }
+
+  async addUserToTeam(teamId: string, userId: string): Promise<void> {
+    await firstValueFrom(this.http.post(`/api/auth/teams/${teamId}/users`, { userId }));
+  }
+
+  async removeUserFromTeam(teamId: string, userId: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/teams/${teamId}/users/${userId}`));
+  }
+
+  async renameTeam(teamId: string, name: string): Promise<Team> {
+    return firstValueFrom(this.http.patch<Team>(`/api/auth/teams/${teamId}`, { name }));
+  }
+
+  async deleteTeam(teamId: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/teams/${teamId}`));
+  }
+
+  async listMyClubs(): Promise<ClubWithTeams[]> {
+    return firstValueFrom(this.http.get<ClubWithTeams[]>('/api/auth/me/clubs'));
+  }
+
+  async updateProfile(formData: FormData): Promise<User> {
+    const user = await firstValueFrom(
+      this.http.patch<User>('/api/auth/profile', formData),
+    );
+    this.currentUser.set(user);
+    return user;
+  }
+
+  async removeAvatar(): Promise<User> {
+    const user = await firstValueFrom(
+      this.http.delete<User>('/api/auth/profile/avatar'),
+    );
+    this.currentUser.set(user);
+    return user;
+  }
+
+  async listLeagues(): Promise<League[]> {
+    return firstValueFrom(this.http.get<League[]>('/api/auth/leagues'));
+  }
+
+  async getLeagueDetail(id: string): Promise<LeagueDetail> {
+    return firstValueFrom(this.http.get<LeagueDetail>(`/api/auth/leagues/${id}`));
+  }
+
+  async createLeague(name: string, type: string, clubId?: string): Promise<League> {
+    return firstValueFrom(
+      this.http.post<League>('/api/auth/leagues', { name, type, clubId }),
+    );
+  }
+
+  async deleteLeague(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/leagues/${id}`));
+  }
+
+  async generateRoundRobin(leagueId: string): Promise<Fixture[]> {
+    return firstValueFrom(
+      this.http.post<Fixture[]>(`/api/auth/leagues/${leagueId}/round-robin`, {}),
+    );
+  }
+
+  async createFixture(
+    leagueId: string, homeId: string, awayId: string, date?: string,
+  ): Promise<Fixture> {
+    return firstValueFrom(
+      this.http.post<Fixture>(`/api/auth/leagues/${leagueId}/fixtures`, { homeId, awayId, date }),
+    );
+  }
+
+  async updateFixture(
+    fixtureId: string,
+    updates: { date?: string; homeScore?: number; awayScore?: number; status?: string },
+  ): Promise<Fixture> {
+    return firstValueFrom(
+      this.http.patch<Fixture>(`/api/auth/fixtures/${fixtureId}`, updates),
+    );
+  }
+
+  async deleteFixture(fixtureId: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/fixtures/${fixtureId}`));
+  }
+
+  async createGoal(fixtureId: string, scorerId: string): Promise<Goal> {
+    return firstValueFrom(
+      this.http.post<Goal>(`/api/auth/fixtures/${fixtureId}/goals`, { scorerId }),
+    );
+  }
+
+  async deleteGoal(goalId: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/goals/${goalId}`));
   }
 
   private restoreSession(): void {

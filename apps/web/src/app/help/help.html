@@ -1,0 +1,96 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Help</h1>
+    <p class="auth-subtitle">Learn how to use the platform and get the most out of its features.</p>
+
+    <section class="help-section">
+      <h2>Getting Started</h2>
+      <p>
+        To start using the platform, create an account on the
+        <a routerLink="/signup">sign up</a> page. You'll need to provide your organisation name,
+        email address, and a password. After signing up, a verification email will be sent to your
+        inbox — click the link in that email to verify your account. Once verified, you can
+        <a routerLink="/login">log in</a> and access all features.
+      </p>
+    </section>
+
+    <section class="help-section">
+      <h2>Your Profile</h2>
+      <p>
+        View your account information on the <a routerLink="/profile">profile</a> page, including
+        your name, email, phone number, organisation, and role. To update your details — such as
+        your first name, last name, phone number, or avatar — visit the
+        <a routerLink="/settings">settings</a> page. You can upload a profile picture that will
+        appear in place of your default initials.
+      </p>
+    </section>
+
+    <section class="help-section">
+      <h2>Organisations</h2>
+      <p>
+        An organisation is automatically created for you when you sign up. It represents your club,
+        league, or group and serves as the top-level container for all your teams, clubs, and
+        members. The name you provide during registration becomes your organisation name.
+      </p>
+    </section>
+
+    <section class="help-section">
+      <h2>Clubs &amp; Teams</h2>
+      <p>
+        Clubs and teams help you organise members within your organisation. Admins can create clubs
+        and teams, assign members to them, and manage their rosters. Each club can contain multiple
+        teams, and members can belong to more than one team. Use clubs to group related teams
+        together (e.g. age groups, divisions).
+      </p>
+    </section>
+
+    <section class="help-section">
+      <h2>Roles &amp; Permissions</h2>
+      <dl class="role-list">
+        <div class="role-item">
+          <dt>USER</dt>
+          <dd>
+            The default role assigned to new members. Users can view their own profile and settings,
+            but cannot manage other members or access the admin dashboard.
+          </dd>
+        </div>
+        <div class="role-item">
+          <dt>ADMIN</dt>
+          <dd>
+            Organisation administrators can access the admin dashboard to manage members within
+            their organisation, invite new users, change roles, and manage clubs and teams.
+          </dd>
+        </div>
+        <div class="role-item">
+          <dt>CONTROL</dt>
+          <dd>
+            System-level administrators with full access across all organisations. Control users
+            can access the control panel for platform-wide management in addition to all admin
+            capabilities.
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="help-section">
+      <h2>Admin Dashboard</h2>
+      <p>
+        The admin dashboard is available to users with the ADMIN or CONTROL role. From here you can
+        view all members in your organisation, invite new members by email, change a member's role,
+        and remove members from the organisation. Access it via the "Organisation dashboard" link
+        in the profile menu.
+      </p>
+    </section>
+
+    <section class="help-section">
+      <h2>Control Panel</h2>
+      <p>
+        The control panel is reserved for users with the CONTROL role. It provides system-level
+        management capabilities across all organisations on the platform. Access it via the
+        "Control panel" link in the profile menu.
+      </p>
+    </section>
+
+    <p class="auth-footer"><a routerLink="/">Back to home</a></p>
+  </div>
+</div>
