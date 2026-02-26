@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 import type {
   League,
+  Team,
   Fixture,
   Goal,
   StandingsRow,
@@ -107,7 +108,7 @@ export class LeagueService {
   async getDetail(leagueId: string): Promise<LeagueDetail> {
     const league = await this.leagueRepo.findOne({
       where: { id: leagueId },
-      relations: ['organisation', 'club'],
+      relations: ['organisation', 'club', 'participants', 'participants.club'],
     });
     if (!league) throw new NotFoundException('League not found');
 
@@ -133,13 +134,58 @@ export class LeagueService {
       goalsByFixture[fid].push(toGoalResponse(g));
     }
 
+    const participants: Team[] = (league.participants ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      clubId: (t.club as any)?.id ?? '',
+    }));
+
     return {
       league: toLeagueResponse(league),
+      participants,
       fixtures: fixtures.map(toFixtureResponse),
       goals: goalsByFixture,
       standings,
       topScorers,
     };
+  }
+
+  async listParticipants(leagueId: string): Promise<Team[]> {
+    const league = await this.leagueRepo.findOne({
+      where: { id: leagueId },
+      relations: ['participants', 'participants.club'],
+    });
+    if (!league) throw new NotFoundException('League not found');
+    return (league.participants ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      clubId: (t.club as any)?.id ?? '',
+    }));
+  }
+
+  async addParticipant(leagueId: string, teamId: string): Promise<void> {
+    const league = await this.leagueRepo.findOne({
+      where: { id: leagueId },
+      relations: ['participants'],
+    });
+    if (!league) throw new NotFoundException('League not found');
+    const team = await this.teamRepo.findOne({ where: { id: teamId } });
+    if (!team) throw new NotFoundException('Team not found');
+    const already = league.participants.some((p) => p.id === teamId);
+    if (!already) {
+      league.participants.push(team);
+      await this.leagueRepo.save(league);
+    }
+  }
+
+  async removeParticipant(leagueId: string, teamId: string): Promise<void> {
+    const league = await this.leagueRepo.findOne({
+      where: { id: leagueId },
+      relations: ['participants'],
+    });
+    if (!league) throw new NotFoundException('League not found');
+    league.participants = league.participants.filter((p) => p.id !== teamId);
+    await this.leagueRepo.save(league);
   }
 
   async deleteLeague(leagueId: string): Promise<void> {

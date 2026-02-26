@@ -239,6 +239,18 @@ export class AuthService {
     await firstValueFrom(this.http.delete(`/api/auth/leagues/${id}`));
   }
 
+  async addLeagueParticipant(leagueId: string, teamId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`/api/auth/leagues/${leagueId}/participants`, { teamId }),
+    );
+  }
+
+  async removeLeagueParticipant(leagueId: string, teamId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`/api/auth/leagues/${leagueId}/participants/${teamId}`),
+    );
+  }
+
   async generateRoundRobin(leagueId: string): Promise<Fixture[]> {
     return firstValueFrom(
       this.http.post<Fixture[]>(`/api/auth/leagues/${leagueId}/round-robin`, {}),

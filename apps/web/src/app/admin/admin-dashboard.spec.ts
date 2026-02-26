@@ -218,12 +218,12 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const tabs = el.querySelectorAll('.tab-btn');
+    const tabs = el.querySelectorAll('.sidebar-btn');
     expect(tabs.length).toBe(3);
     expect(tabs[0].textContent).toContain('Members');
     expect(tabs[1].textContent).toContain('Clubs');
     expect(tabs[2].textContent).toContain('Leagues');
-    expect(tabs[0].classList.contains('tab-btn--active')).toBe(true);
+    expect(tabs[0].classList.contains('sidebar-btn--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Invite a member');
   });
 
@@ -233,11 +233,11 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const clubsTab = el.querySelectorAll('.tab-btn')[1] as HTMLButtonElement;
+    const clubsTab = el.querySelectorAll('.sidebar-btn')[1] as HTMLButtonElement;
     clubsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('clubs');
-    expect(clubsTab.classList.contains('tab-btn--active')).toBe(true);
+    expect(clubsTab.classList.contains('sidebar-btn--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Clubs');
   });
 
@@ -315,11 +315,11 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const leaguesTab = el.querySelectorAll('.tab-btn')[2] as HTMLButtonElement;
+    const leaguesTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
     leaguesTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('leagues');
-    expect(leaguesTab.classList.contains('tab-btn--active')).toBe(true);
+    expect(leaguesTab.classList.contains('sidebar-btn--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Leagues');
   });
 
@@ -331,7 +331,7 @@ describe('AdminDashboard', () => {
     component.leagueName.set('Autumn League');
     component.leagueType.set('club');
     await component.createLeague();
-    expect(authService.createLeague).toHaveBeenCalledWith('Autumn League', 'club', undefined);
+    expect(authService.createLeague).toHaveBeenCalledWith('Autumn League', 'club');
     expect(component.leagueName()).toBe('');
   });
 

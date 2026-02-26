@@ -95,6 +95,7 @@ export interface TopScorer {
 }
 export interface LeagueDetail {
     league: League;
+    participants: Team[];
     fixtures: Fixture[];
     goals: Record<string, Goal[]>;
     standings: StandingsRow[];

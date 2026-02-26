@@ -4,10 +4,13 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  ManyToMany,
+  JoinTable,
   Relation,
 } from 'typeorm';
 import type { OrganisationEntity } from './organisation.entity';
 import type { ClubEntity } from './club.entity';
+import { TeamEntity } from './team.entity';
 
 @Entity('leagues')
 export class LeagueEntity {
@@ -25,6 +28,10 @@ export class LeagueEntity {
 
   @ManyToOne('ClubEntity', { nullable: true, onDelete: 'CASCADE' })
   club!: Relation<ClubEntity> | null;
+
+  @ManyToMany(() => TeamEntity)
+  @JoinTable({ name: 'league_participants' })
+  participants!: Relation<TeamEntity[]>;
 
   @CreateDateColumn()
   createdAt!: Date;

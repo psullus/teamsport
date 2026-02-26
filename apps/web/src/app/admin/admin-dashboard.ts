@@ -39,6 +39,9 @@ export class AdminDashboard implements OnInit {
   leagues = signal<League[]>([]);
   selectedLeague = signal<League | null>(null);
   leagueDetail = signal<LeagueDetail | null>(null);
+  leagueTab = signal<'teams' | 'fixtures' | 'standings' | 'scorers'>('teams');
+  addParticipantTeamId = signal('');
+  allTeams = signal<Team[]>([]);
   leagueName = signal('');
   leagueType = signal<'club' | 'team'>('club');
   leagueClubId = signal('');
@@ -58,7 +61,7 @@ export class AdminDashboard implements OnInit {
   ngOnInit() {
     this.loadUsers();
     this.loadInvites();
-    this.loadClubs();
+    this.loadClubs().then(() => this.loadAllTeams());
     this.loadLeagues();
   }
 
@@ -271,16 +274,47 @@ export class AdminDashboard implements OnInit {
 
   async createLeague() {
     const name = this.leagueName();
-    const type = this.leagueType();
     if (!name) return;
-    const clubId = type === 'team' ? this.leagueClubId() : undefined;
-    await this.authService.createLeague(name, type, clubId);
+    await this.authService.createLeague(name, 'club');
     this.leagueName.set('');
     this.loadLeagues();
   }
 
   async selectLeague(league: League) {
     this.selectedLeague.set(league);
+    this.loadLeagueDetail(league.id);
+  }
+
+  async loadAllTeams() {
+    const teams: Team[] = [];
+    for (const club of this.clubs()) {
+      try {
+        const clubTeams = await this.authService.listTeams(club.id);
+        teams.push(...clubTeams);
+      } catch {
+        // skip
+      }
+    }
+    this.allTeams.set(teams);
+  }
+
+  clubNameForTeam(clubId: string): string {
+    return this.clubs().find((c) => c.id === clubId)?.name ?? '';
+  }
+
+  async addParticipant() {
+    const league = this.selectedLeague();
+    const teamId = this.addParticipantTeamId();
+    if (!league || !teamId) return;
+    await this.authService.addLeagueParticipant(league.id, teamId);
+    this.addParticipantTeamId.set('');
+    this.loadLeagueDetail(league.id);
+  }
+
+  async removeParticipant(teamId: string) {
+    const league = this.selectedLeague();
+    if (!league) return;
+    await this.authService.removeLeagueParticipant(league.id, teamId);
     this.loadLeagueDetail(league.id);
   }
 

@@ -355,6 +355,28 @@ export class AuthController {
     return { success: true };
   }
 
+  @Get('leagues/:id/participants')
+  @UseGuards(JwtAuthGuard)
+  async listLeagueParticipants(@Param('id') id: string) {
+    return this.leagueService.listParticipants(id);
+  }
+
+  @Post('leagues/:id/participants')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async addLeagueParticipant(@Param('id') id: string, @Body() body: { teamId: string }) {
+    await this.leagueService.addParticipant(id, body.teamId);
+    return { success: true };
+  }
+
+  @Delete('leagues/:id/participants/:teamId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async removeLeagueParticipant(@Param('id') id: string, @Param('teamId') teamId: string) {
+    await this.leagueService.removeParticipant(id, teamId);
+    return { success: true };
+  }
+
   @Post('leagues/:id/round-robin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)

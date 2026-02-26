@@ -1,24 +1,26 @@
 <div class="dashboard-page">
   <h1>Organisation dashboard</h1>
 
-  <nav class="tab-bar">
-    <button
-      class="tab-btn"
-      [class.tab-btn--active]="activeTab() === 'members'"
-      (click)="setTab('members')"
-    >Members</button>
-    <button
-      class="tab-btn"
-      [class.tab-btn--active]="activeTab() === 'clubs'"
-      (click)="setTab('clubs')"
-    >Clubs &amp; Teams</button>
-    <button
-      class="tab-btn"
-      [class.tab-btn--active]="activeTab() === 'leagues'"
-      (click)="setTab('leagues')"
-    >Leagues</button>
-  </nav>
+  <div class="dashboard-layout">
+    <nav class="sidebar">
+      <button
+        class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'members'"
+        (click)="setTab('members')"
+      >Members</button>
+      <button
+        class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'clubs'"
+        (click)="setTab('clubs')"
+      >Clubs &amp; Teams</button>
+      <button
+        class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'leagues'"
+        (click)="setTab('leagues')"
+      >Leagues</button>
+    </nav>
 
+    <main class="dashboard-main">
   @if (activeTab() === 'members') {
   <section class="dashboard-section">
     <h2>Invite a member</h2>
@@ -276,26 +278,6 @@
         placeholder="League name"
         required
       />
-      <select
-        [ngModel]="leagueType()"
-        (ngModelChange)="leagueType.set($event)"
-        name="leagueType"
-      >
-        <option value="club">Club league</option>
-        <option value="team">Team league</option>
-      </select>
-      @if (leagueType() === 'team') {
-        <select
-          [ngModel]="leagueClubId()"
-          (ngModelChange)="leagueClubId.set($event)"
-          name="leagueClubId"
-        >
-          <option value="">Select club…</option>
-          @for (club of clubs(); track club.id) {
-            <option [value]="club.id">{{ club.name }}</option>
-          }
-        </select>
-      }
       <button type="submit" class="btn btn-primary">Create league</button>
     </form>
     @if (leagues().length === 0) {
@@ -309,7 +291,6 @@
               [class.active]="selectedLeague()?.id === league.id"
               (click)="selectLeague(league)"
             >{{ league.name }}</button>
-            <span class="badge">{{ league.type }}</span>
             <button class="btn-danger" (click)="deleteLeague(league.id)">Delete</button>
           </li>
         }
@@ -318,7 +299,70 @@
   </section>
 
   @if (selectedLeague() && leagueDetail()) {
-    <section class="dashboard-section">
+    <nav class="tab-bar league-tab-bar">
+      <button
+        class="tab-btn"
+        [class.tab-btn--active]="leagueTab() === 'teams'"
+        (click)="leagueTab.set('teams')"
+      >Teams</button>
+      <button
+        class="tab-btn"
+        [class.tab-btn--active]="leagueTab() === 'fixtures'"
+        (click)="leagueTab.set('fixtures')"
+      >Fixtures</button>
+      <button
+        class="tab-btn"
+        [class.tab-btn--active]="leagueTab() === 'standings'"
+        (click)="leagueTab.set('standings')"
+      >Standings</button>
+      <button
+        class="tab-btn"
+        [class.tab-btn--active]="leagueTab() === 'scorers'"
+        (click)="leagueTab.set('scorers')"
+      >Top Scorers</button>
+    </nav>
+
+    @if (leagueTab() === 'teams') {
+    <section class="dashboard-section dashboard-section--tab">
+      <h2>{{ selectedLeague()!.name }} — Teams</h2>
+      <form class="invite-form" (ngSubmit)="addParticipant()">
+        <select
+          [ngModel]="addParticipantTeamId()"
+          (ngModelChange)="addParticipantTeamId.set($event)"
+          name="addParticipantTeamId"
+        >
+          <option value="">Select a team…</option>
+          @for (team of allTeams(); track team.id) {
+            <option [value]="team.id">{{ team.name }} ({{ clubNameForTeam(team.clubId) }})</option>
+          }
+        </select>
+        <button type="submit" class="btn btn-primary">Add team</button>
+      </form>
+      @if (leagueDetail()!.participants.length === 0) {
+        <p class="empty-state">No teams in this league yet.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr><th>Team</th><th>Club</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (participant of leagueDetail()!.participants; track participant.id) {
+              <tr>
+                <td>{{ participant.name }}</td>
+                <td>{{ clubNameForTeam(participant.clubId) }}</td>
+                <td>
+                  <button class="btn-danger" (click)="removeParticipant(participant.id)">Remove</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+    }
+
+    @if (leagueTab() === 'fixtures') {
+    <section class="dashboard-section dashboard-section--tab">
       <div class="section-header">
         <h2>{{ selectedLeague()!.name }} — Fixtures</h2>
         <button
@@ -483,8 +527,10 @@
         </table>
       }
     </section>
+    }
 
-    <section class="dashboard-section">
+    @if (leagueTab() === 'standings') {
+    <section class="dashboard-section dashboard-section--tab">
       <h2>Standings</h2>
       @if (leagueDetail()!.standings.length === 0) {
         <p class="empty-state">No standings data yet.</p>
@@ -523,9 +569,11 @@
         </table>
       }
     </section>
+    }
 
-    <section class="dashboard-section">
-      <h2>Top scorers</h2>
+    @if (leagueTab() === 'scorers') {
+    <section class="dashboard-section dashboard-section--tab">
+      <h2>Top Scorers</h2>
       @if (leagueDetail()!.topScorers.length === 0) {
         <p class="empty-state">No scores recorded yet.</p>
       } @else {
@@ -553,6 +601,9 @@
         </table>
       }
     </section>
+    }
   }
   }
+    </main>
+  </div>
 </div>

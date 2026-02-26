@@ -1,7 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ROLES = exports.CONTROL = exports.ADMIN = exports.USER = void 0;
 /** Standard user within an organisation */
-export const USER = 'USER';
+exports.USER = 'USER';
 /** Organisation administrator */
-export const ADMIN = 'ADMIN';
+exports.ADMIN = 'ADMIN';
 /** Overall system access */
-export const CONTROL = 'CONTROL';
-export const ROLES = { USER, ADMIN, CONTROL };
+exports.CONTROL = 'CONTROL';
+exports.ROLES = { USER: exports.USER, ADMIN: exports.ADMIN, CONTROL: exports.CONTROL };
