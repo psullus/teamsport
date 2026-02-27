@@ -1,0 +1,18 @@
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+
+export class SignupDto {
+  @IsNotEmpty()
+  organisationName!: string;
+
+  @IsNotEmpty()
+  clubName!: string;
+
+  @IsNotEmpty()
+  teamName!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @MinLength(8)
+  password!: string;
+}

@@ -1,0 +1,75 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy-web.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run test:web -- --no-watch
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    # Uncomment and configure for your AWS environment:
+    # environment: development
+    # permissions:
+    #   id-token: write
+    #   contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build:web
+
+      # --- Choose ONE of the deployment strategies below ---
+
+      # Option A: S3 + CloudFront (most common for SPAs)
+      #
+      # - uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: ap-southeast-2
+      #
+      # - name: Sync to S3
+      #   run: aws s3 sync dist/teamsport/browser s3://${{ secrets.S3_BUCKET }} --delete
+      #
+      # - name: Invalidate CloudFront cache
+      #   run: |
+      #     aws cloudfront create-invalidation \
+      #       --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+      #       --paths "/*"
+
+      # Option B: AWS Amplify Hosting
+      #
+      # - uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: ap-southeast-2
+      #
+      # - name: Deploy to Amplify
+      #   run: |
+      #     aws amplify start-deployment \
+      #       --app-id ${{ secrets.AMPLIFY_APP_ID }} \
+      #       --branch-name development

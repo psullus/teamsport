@@ -1,0 +1,35 @@
+@if (isLoggedIn()) {
+  <div class="profile-menu">
+    <button
+      class="avatar"
+      (click)="toggle($event)"
+      [attr.aria-expanded]="isOpen()"
+      aria-haspopup="true"
+    >
+      {{ userInitials() }}
+    </button>
+
+    @if (isOpen()) {
+      <div class="dropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-header">
+          <span class="dropdown-name">{{ user()?.organisationName }}</span>
+          <span class="dropdown-email">{{ user()?.email }}</span>
+          <span class="dropdown-role">{{ user()?.role }}</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" routerLink="/" (click)="isOpen.set(false)">Home</a>
+        @if (isControl()) {
+          <a class="dropdown-item" routerLink="/control" (click)="isOpen.set(false)">Control panel</a>
+        }
+        @if (isAdminOrControl()) {
+          <a class="dropdown-item" routerLink="/admin" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">settings</span> Account settings</a>
+        }
+        <a class="dropdown-item" routerLink="/profile" (click)="isOpen.set(false)">View profile</a>
+        <a class="dropdown-item" routerLink="/settings" (click)="isOpen.set(false)">Settings</a>
+        <a class="dropdown-item" routerLink="/help" (click)="isOpen.set(false)">Help</a>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" (click)="logout()">Log out</button>
+      </div>
+    }
+  </div>
+}

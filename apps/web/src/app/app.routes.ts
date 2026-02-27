@@ -1,0 +1,35 @@
+import { Routes } from '@angular/router';
+import { Home } from './home/home';
+import { Signup } from './signup/signup';
+import { Login } from './login/login';
+import { VerifyEmail } from './verify-email/verify-email';
+import { VerifyEmailNotice } from './verify-email-notice/verify-email-notice';
+import { AdminDashboard } from './admin/admin-dashboard';
+import { ControlDashboard } from './control/control-dashboard';
+import { Settings } from './settings/settings';
+import { Profile } from './profile/profile';
+import { Help } from './help/help';
+import { authGuard } from './guards/auth.guard';
+import { roleGuard } from './guards/role.guard';
+import { ROLES } from '@teamsport/shared';
+
+export const routes: Routes = [
+  { path: '', component: Home },
+  { path: 'signup', component: Signup },
+  { path: 'login', component: Login },
+  { path: 'verify-email', component: VerifyEmail },
+  { path: 'verify-email-notice', component: VerifyEmailNotice },
+  { path: 'help', component: Help },
+  { path: 'profile', component: Profile, canActivate: [authGuard] },
+  { path: 'settings', component: Settings, canActivate: [authGuard] },
+  {
+    path: 'admin',
+    component: AdminDashboard,
+    canActivate: [authGuard, roleGuard(ROLES.ADMIN, ROLES.CONTROL)],
+  },
+  {
+    path: 'control',
+    component: ControlDashboard,
+    canActivate: [authGuard, roleGuard(ROLES.CONTROL)],
+  },
+];

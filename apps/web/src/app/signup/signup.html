@@ -1,0 +1,82 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>{{ inviteToken ? 'Join your team' : 'Create your account' }}</h1>
+    <p class="auth-subtitle">
+      {{ inviteToken ? 'Complete your registration to join.' : 'Get your team up and running in minutes.' }}
+    </p>
+
+    @if (error()) {
+      <p class="auth-error">{{ error() }}</p>
+    }
+
+    <form (ngSubmit)="onSubmit()">
+      @if (!inviteToken) {
+        <div class="form-group">
+          <label for="organisationName">Organisation name</label>
+          <input
+            id="organisationName"
+            type="text"
+            [(ngModel)]="organisationName"
+            name="organisationName"
+            placeholder="e.g. River Valley FC"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="clubName">Club name</label>
+          <input
+            id="clubName"
+            type="text"
+            [(ngModel)]="clubName"
+            name="clubName"
+            placeholder="e.g. Senior Club"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="teamName">Team name</label>
+          <input
+            id="teamName"
+            type="text"
+            [(ngModel)]="teamName"
+            name="teamName"
+            placeholder="e.g. First XI"
+            required
+          />
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="you@example.com"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="At least 8 characters"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full">
+        {{ inviteToken ? 'Join team' : 'Create account' }}
+      </button>
+    </form>
+
+    <p class="auth-footer">Already have an account? <a routerLink="/login">Log in</a></p>
+  </div>
+</div>

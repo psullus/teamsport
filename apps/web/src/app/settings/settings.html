@@ -1,0 +1,81 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Settings</h1>
+    <p class="auth-subtitle">Update your profile information.</p>
+
+    @if (success()) {
+      <p class="auth-success">{{ success() }}</p>
+    }
+    @if (error()) {
+      <p class="auth-error">{{ error() }}</p>
+    }
+
+    <div class="avatar-section">
+      <div class="avatar-preview">
+        @if (avatarPreview()) {
+          <img [src]="avatarPreview()" alt="Avatar" class="avatar-img" />
+        } @else {
+          <div class="avatar-placeholder">
+            <span>No photo</span>
+          </div>
+        }
+      </div>
+      <div class="avatar-actions">
+        <label class="btn btn-secondary btn-small" for="avatar-input">Upload photo</label>
+        <input
+          id="avatar-input"
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          hidden
+        />
+        @if (avatarPreview()) {
+          <button type="button" class="btn btn-danger btn-small" (click)="removeAvatar()">
+            Remove
+          </button>
+        }
+      </div>
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="firstName">First name</label>
+        <input
+          id="firstName"
+          type="text"
+          [(ngModel)]="firstName"
+          name="firstName"
+          placeholder="Your first name"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last name</label>
+        <input
+          id="lastName"
+          type="text"
+          [(ngModel)]="lastName"
+          name="lastName"
+          placeholder="Your last name"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone number</label>
+        <input
+          id="phone"
+          type="tel"
+          [(ngModel)]="phone"
+          name="phone"
+          placeholder="Your phone number"
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : 'Save changes' }}
+      </button>
+    </form>
+
+    <p class="auth-footer"><a routerLink="/">Back to home</a></p>
+  </div>
+</div>

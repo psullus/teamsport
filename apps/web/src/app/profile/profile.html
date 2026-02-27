@@ -1,0 +1,58 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Your profile</h1>
+    <p class="auth-subtitle">Your account information at a glance.</p>
+
+    <div class="avatar-section">
+      <div class="avatar-preview">
+        @if (user()?.avatarUrl) {
+          <img [src]="user()!.avatarUrl" alt="Avatar" class="avatar-img" />
+        } @else {
+          <div class="avatar-placeholder">
+            <span class="avatar-initials">{{ userInitials() }}</span>
+          </div>
+        }
+      </div>
+      <div class="avatar-name">
+        <span class="display-name">
+          {{ user()?.firstName || user()?.lastName
+            ? (user()?.firstName ?? '') + ' ' + (user()?.lastName ?? '')
+            : 'No name set' }}
+        </span>
+        <span class="display-role">{{ user()?.role }}</span>
+      </div>
+    </div>
+
+    <dl class="info-list">
+      <div class="info-row">
+        <dt>Email</dt>
+        <dd>
+          {{ user()?.email }}
+          @if (user()?.emailVerified) {
+            <span class="badge badge-verified">Verified</span>
+          } @else {
+            <span class="badge badge-unverified">Unverified</span>
+          }
+        </dd>
+      </div>
+
+      <div class="info-row">
+        <dt>Phone</dt>
+        <dd>{{ user()?.phone || 'Not set' }}</dd>
+      </div>
+
+      <div class="info-row">
+        <dt>Organisation</dt>
+        <dd>{{ user()?.organisationName }}</dd>
+      </div>
+
+      <div class="info-row">
+        <dt>Role</dt>
+        <dd>{{ user()?.role }}</dd>
+      </div>
+    </dl>
+
+    <a routerLink="/settings" class="btn btn-primary btn-full">Edit profile</a>
+    <p class="auth-footer"><a routerLink="/">Back to home</a></p>
+  </div>
+</div>
