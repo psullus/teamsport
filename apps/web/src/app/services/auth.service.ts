@@ -251,9 +251,12 @@ export class AuthService {
     );
   }
 
-  async generateRoundRobin(leagueId: string): Promise<Fixture[]> {
+  async generateRoundRobin(
+    leagueId: string,
+    options: { days: string[]; timeSlots: string[]; force: boolean },
+  ): Promise<Fixture[]> {
     return firstValueFrom(
-      this.http.post<Fixture[]>(`/api/auth/leagues/${leagueId}/round-robin`, {}),
+      this.http.post<Fixture[]>(`/api/auth/leagues/${leagueId}/round-robin`, options),
     );
   }
 

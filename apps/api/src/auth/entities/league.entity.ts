@@ -29,6 +29,9 @@ export class LeagueEntity {
   @ManyToOne('ClubEntity', { nullable: true, onDelete: 'CASCADE' })
   club!: Relation<ClubEntity> | null;
 
+  @Column({ default: false })
+  started!: boolean;
+
   @ManyToMany(() => TeamEntity)
   @JoinTable({ name: 'league_participants' })
   participants!: Relation<TeamEntity[]>;

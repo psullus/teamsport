@@ -56,6 +56,7 @@ export interface League {
   type: LeagueType;
   organisationId: string;
   clubId: string | null;
+  started: boolean;
 }
 
 export interface Fixture {

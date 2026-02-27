@@ -380,8 +380,15 @@ export class AuthController {
   @Post('leagues/:id/round-robin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)
-  async generateRoundRobin(@Param('id') id: string) {
-    return this.leagueService.generateRoundRobin(id);
+  async generateRoundRobin(
+    @Param('id') id: string,
+    @Body() body: { days: string[]; timeSlots: string[]; force?: boolean },
+  ) {
+    return this.leagueService.generateRoundRobin(id, {
+      days: body.days,
+      timeSlots: body.timeSlots,
+      force: body.force ?? false,
+    });
   }
 
   @Post('leagues/:id/fixtures')

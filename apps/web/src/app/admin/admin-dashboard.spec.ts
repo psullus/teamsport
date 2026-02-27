@@ -71,11 +71,11 @@ describe('AdminDashboard', () => {
       deleteTeam: vi.fn().mockResolvedValue(undefined),
       changeUserRole: vi.fn().mockResolvedValue({ id: '1', role: 'USER' }),
       listLeagues: vi.fn().mockResolvedValue([
-        { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null },
+        { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false },
       ]),
       createLeague: vi.fn().mockResolvedValue({ id: 'league-2', name: 'Autumn League' }),
       getLeagueDetail: vi.fn().mockResolvedValue({
-        league: { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null },
+        league: { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false },
         fixtures: [
           {
             id: 'fix-1', leagueId: 'league-1', homeId: 'club-1', awayId: 'club-2',
@@ -127,7 +127,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('h1')?.textContent).toContain('Organisation dashboard');
+    expect(el.querySelector('h1')?.textContent).toContain('Account settings');
   });
 
   it('should load and display org users', async () => {
@@ -341,7 +341,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     const component = fixture.componentInstance;
     await component.selectLeague({
-      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null,
+      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false,
     });
     expect(component.selectedLeague()?.id).toBe('league-1');
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
@@ -364,10 +364,12 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     const component = fixture.componentInstance;
     component.selectedLeague.set({
-      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null,
+      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false,
     });
     await component.generateRoundRobin();
-    expect(authService.generateRoundRobin).toHaveBeenCalledWith('league-1');
+    expect(authService.generateRoundRobin).toHaveBeenCalledWith('league-1', {
+      days: ['monday'], timeSlots: ['19:00'], force: false,
+    });
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
   });
 });

@@ -26,6 +26,7 @@ function toLeagueResponse(league: LeagueEntity): League {
     type: league.type,
     organisationId: (league.organisation as any)?.id ?? '',
     clubId: (league.club as any)?.id ?? null,
+    started: league.started ?? false,
   };
 }
 
@@ -205,6 +206,7 @@ export class LeagueService {
       relations: ['organisation', 'club'],
     });
     if (!league) throw new NotFoundException('League not found');
+    if (homeId === awayId) throw new BadRequestException('A team cannot play itself');
 
     const fixtureData: Partial<FixtureEntity> = {
       league: { id: leagueId } as any,
@@ -277,63 +279,109 @@ export class LeagueService {
     return toGoalResponse(full!);
   }
 
-  async generateRoundRobin(leagueId: string): Promise<Fixture[]> {
+  async generateRoundRobin(
+    leagueId: string,
+    options: { days: string[]; timeSlots: string[]; force: boolean },
+  ): Promise<Fixture[]> {
     const league = await this.leagueRepo.findOne({
       where: { id: leagueId },
-      relations: ['organisation', 'club'],
+      relations: ['organisation', 'club', 'participants', 'participants.club'],
     });
     if (!league) throw new NotFoundException('League not found');
 
-    let participantIds: string[];
-    if (league.type === 'club') {
-      const orgId = (league.organisation as any)?.id;
-      const clubs = await this.clubRepo.find({
-        where: { organisation: { id: orgId } },
-      });
-      participantIds = clubs.map((c) => c.id);
-    } else {
-      const clubId = (league.club as any)?.id;
-      if (!clubId) throw new BadRequestException('Team league has no club assigned');
-      const teams = await this.teamRepo.find({
-        where: { club: { id: clubId } },
-      });
-      participantIds = teams.map((t) => t.id);
+    if (league.started && !options.force) {
+      throw new BadRequestException('League already started');
     }
 
-    if (participantIds.length < 2) {
+    if (options.force) {
+      await this.fixtureRepo.delete({ league: { id: leagueId } });
+    }
+
+    const participants = league.participants ?? [];
+    if (participants.length < 2) {
       throw new BadRequestException('Need at least 2 participants to generate fixtures');
     }
 
     const pairs: [string, string][] = [];
-    for (let i = 0; i < participantIds.length; i++) {
-      for (let j = i + 1; j < participantIds.length; j++) {
-        pairs.push([participantIds[i], participantIds[j]]);
+    for (let i = 0; i < participants.length; i++) {
+      for (let j = i + 1; j < participants.length; j++) {
+        pairs.push([participants[i].id, participants[j].id]);
       }
     }
 
+    const dayNames = [
+      'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
+    ];
+    const targetDays = (options.days.length > 0 ? options.days : ['monday'])
+      .map((d) => dayNames.indexOf(d.toLowerCase()))
+      .filter((d) => d >= 0)
+      .sort((a, b) => a - b);
+    if (targetDays.length === 0) targetDays.push(1);
+
+    const now = new Date();
+    const baseDate = new Date(now);
+    baseDate.setHours(0, 0, 0, 0);
+
+    const startDates = targetDays.map((targetDay) => {
+      const d = new Date(baseDate);
+      const daysUntil = (targetDay - d.getDay() + 7) % 7 || 7;
+      d.setDate(d.getDate() + daysUntil);
+      return d;
+    });
+
+    const timeSlots = options.timeSlots.length > 0 ? options.timeSlots : ['19:00'];
+
+    const remaining = [...pairs];
+    let weekOffset = 0;
     const fixtures: FixtureEntity[] = [];
-    for (const [homeId, awayId] of pairs) {
-      const data: Partial<FixtureEntity> = {
-        league: { id: leagueId } as any,
-        date: null,
-        status: 'scheduled',
-      };
-      if (league.type === 'club') {
-        data.homeClub = { id: homeId } as any;
-        data.awayClub = { id: awayId } as any;
-      } else {
-        data.homeTeam = { id: homeId } as any;
-        data.awayTeam = { id: awayId } as any;
+
+    while (remaining.length > 0) {
+      for (const dayStart of startDates) {
+        if (remaining.length === 0) break;
+
+        const busyTeams = new Set<string>();
+        let slotIndex = 0;
+
+        for (let i = 0; i < remaining.length && slotIndex < timeSlots.length; ) {
+          const [homeId, awayId] = remaining[i];
+          if (busyTeams.has(homeId) || busyTeams.has(awayId)) {
+            i++;
+            continue;
+          }
+
+          busyTeams.add(homeId);
+          busyTeams.add(awayId);
+
+          const matchDate = new Date(dayStart);
+          matchDate.setDate(matchDate.getDate() + weekOffset * 7);
+          const [hours, minutes] = timeSlots[slotIndex].split(':').map(Number);
+          matchDate.setHours(hours, minutes, 0, 0);
+
+          fixtures.push(this.fixtureRepo.create({
+            league: { id: leagueId } as any,
+            date: matchDate,
+            status: 'scheduled',
+            homeTeam: { id: homeId } as any,
+            awayTeam: { id: awayId } as any,
+          }));
+
+          remaining.splice(i, 1);
+          slotIndex++;
+        }
       }
-      fixtures.push(this.fixtureRepo.create(data));
+
+      weekOffset++;
     }
 
     await this.fixtureRepo.save(fixtures);
 
+    league.started = true;
+    await this.leagueRepo.save(league);
+
     const saved = await this.fixtureRepo.find({
       where: { league: { id: leagueId } },
       relations: ['league', 'homeClub', 'awayClub', 'homeTeam', 'awayTeam'],
-      order: { createdAt: 'ASC' },
+      order: { date: 'ASC' },
     });
     return saved.map(toFixtureResponse);
   }

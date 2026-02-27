@@ -285,41 +285,33 @@ describe('LeagueService', () => {
   });
 
   describe('generateRoundRobin', () => {
+    const defaultOptions = { days: ['monday'], timeSlots: ['19:00'], force: false };
+
     it('should generate all pairings for a club league', async () => {
       mockLeagueRepo.findOne.mockResolvedValue({
-        id: 'league-1', type: 'club',
+        id: 'league-1', type: 'club', started: false,
         organisation: { id: 'org-1' }, club: null,
+        participants: [
+          { id: 'c1', name: 'C1', club: { id: 'club-1' } },
+          { id: 'c2', name: 'C2', club: { id: 'club-2' } },
+          { id: 'c3', name: 'C3', club: { id: 'club-3' } },
+        ],
       });
-      mockClubRepo.find.mockResolvedValue([
-        { id: 'c1' }, { id: 'c2' }, { id: 'c3' },
-      ]);
       let createCount = 0;
       mockFixtureRepo.create.mockImplementation((data) => ({
         ...data, id: `fix-${++createCount}`,
       }));
       mockFixtureRepo.save.mockImplementation((entities) => Promise.resolve(entities));
-      mockFixtureRepo.find.mockResolvedValue([
-        {
-          id: 'fix-1', league: { id: 'league-1' },
-          homeClub: { id: 'c1', name: 'C1' }, awayClub: { id: 'c2', name: 'C2' },
-          homeTeam: null, awayTeam: null,
-          date: null, homeScore: null, awayScore: null, status: 'scheduled',
-        },
-        {
-          id: 'fix-2', league: { id: 'league-1' },
-          homeClub: { id: 'c1', name: 'C1' }, awayClub: { id: 'c3', name: 'C3' },
-          homeTeam: null, awayTeam: null,
-          date: null, homeScore: null, awayScore: null, status: 'scheduled',
-        },
-        {
-          id: 'fix-3', league: { id: 'league-1' },
-          homeClub: { id: 'c2', name: 'C2' }, awayClub: { id: 'c3', name: 'C3' },
-          homeTeam: null, awayTeam: null,
-          date: null, homeScore: null, awayScore: null, status: 'scheduled',
-        },
-      ]);
+      mockLeagueRepo.save.mockImplementation((entity) => Promise.resolve(entity));
+      const savedFixtures = Array.from({ length: 3 }, (_, i) => ({
+        id: `fix-${i + 1}`, league: { id: 'league-1' },
+        homeClub: null, awayClub: null,
+        homeTeam: { id: 'c1', name: 'C1' }, awayTeam: { id: 'c2', name: 'C2' },
+        date: new Date(), homeScore: null, awayScore: null, status: 'scheduled',
+      }));
+      mockFixtureRepo.find.mockResolvedValue(savedFixtures);
 
-      const result = await service.generateRoundRobin('league-1');
+      const result = await service.generateRoundRobin('league-1', defaultOptions);
 
       expect(result).toHaveLength(3);
       expect(mockFixtureRepo.save).toHaveBeenCalled();
@@ -327,24 +319,26 @@ describe('LeagueService', () => {
 
     it('should generate all pairings for a team league', async () => {
       mockLeagueRepo.findOne.mockResolvedValue({
-        id: 'league-2', type: 'team',
+        id: 'league-2', type: 'team', started: false,
         organisation: { id: 'org-1' }, club: { id: 'club-1' },
+        participants: [
+          { id: 't1', name: 'T1', club: { id: 'club-1' } },
+          { id: 't2', name: 'T2', club: { id: 'club-1' } },
+        ],
       });
-      mockTeamRepo.find.mockResolvedValue([
-        { id: 't1' }, { id: 't2' },
-      ]);
       mockFixtureRepo.create.mockImplementation((data) => ({ ...data, id: 'fix-1' }));
       mockFixtureRepo.save.mockImplementation((entities) => Promise.resolve(entities));
+      mockLeagueRepo.save.mockImplementation((entity) => Promise.resolve(entity));
       mockFixtureRepo.find.mockResolvedValue([
         {
           id: 'fix-1', league: { id: 'league-2' },
           homeClub: null, awayClub: null,
           homeTeam: { id: 't1', name: 'T1' }, awayTeam: { id: 't2', name: 'T2' },
-          date: null, homeScore: null, awayScore: null, status: 'scheduled',
+          date: new Date(), homeScore: null, awayScore: null, status: 'scheduled',
         },
       ]);
 
-      const result = await service.generateRoundRobin('league-2');
+      const result = await service.generateRoundRobin('league-2', defaultOptions);
 
       expect(result).toHaveLength(1);
     });
@@ -352,17 +346,17 @@ describe('LeagueService', () => {
     it('should throw NotFoundException if league not found', async () => {
       mockLeagueRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.generateRoundRobin('bad')).rejects.toThrow(NotFoundException);
+      await expect(service.generateRoundRobin('bad', defaultOptions)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if fewer than 2 participants', async () => {
       mockLeagueRepo.findOne.mockResolvedValue({
-        id: 'league-1', type: 'club',
+        id: 'league-1', type: 'club', started: false,
         organisation: { id: 'org-1' }, club: null,
+        participants: [{ id: 'c1', name: 'C1', club: { id: 'club-1' } }],
       });
-      mockClubRepo.find.mockResolvedValue([{ id: 'c1' }]);
 
-      await expect(service.generateRoundRobin('league-1')).rejects.toThrow(BadRequestException);
+      await expect(service.generateRoundRobin('league-1', defaultOptions)).rejects.toThrow(BadRequestException);
     });
   });
 

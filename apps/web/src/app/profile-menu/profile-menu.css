@@ -116,3 +116,8 @@
 .dropdown-item:hover {
   background-color: #f5f5f5;
 }
+
+.menu-icon {
+  font-size: 1.125rem;
+  vertical-align: text-bottom;
+}

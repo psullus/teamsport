@@ -1,5 +1,5 @@
 <div class="dashboard-page">
-  <h1>Organisation dashboard</h1>
+  <h1><span class="material-symbols-outlined page-icon">settings</span> Account settings</h1>
 
   <div class="dashboard-layout">
     <nav class="sidebar">
@@ -12,7 +12,7 @@
         class="sidebar-btn"
         [class.sidebar-btn--active]="activeTab() === 'clubs'"
         (click)="setTab('clubs')"
-      >Clubs &amp; Teams</button>
+      >Clubs</button>
       <button
         class="sidebar-btn"
         [class.sidebar-btn--active]="activeTab() === 'leagues'"
@@ -367,9 +367,72 @@
         <h2>{{ selectedLeague()!.name }} — Fixtures</h2>
         <button
           class="btn btn-primary btn-sm"
-          (click)="generateRoundRobin()"
-        >Generate round robin</button>
+          (click)="toggleRoundRobinForm()"
+        >{{ showRoundRobinForm() ? 'Cancel' : 'Generate round robin' }}</button>
       </div>
+
+      @if (showRoundRobinForm()) {
+        <div class="round-robin-form">
+          @if (leagueDetail()!.league.started) {
+            <div class="rr-warning">
+              <p class="rr-warning-text">This league has already started. Generating a new round robin will delete all existing fixtures, scores, and goals.</p>
+              <label class="rr-warning-check">
+                <input
+                  type="checkbox"
+                  [ngModel]="roundRobinConfirmRestart()"
+                  (ngModelChange)="roundRobinConfirmRestart.set($event)"
+                  name="confirmRestart"
+                />
+                I understand, restart the league
+              </label>
+            </div>
+          }
+
+          @if (!leagueDetail()!.league.started || roundRobinConfirmRestart()) {
+            <div class="rr-fields">
+              <div class="rr-field">
+                <label class="rr-label">Match days</label>
+                <div class="rr-day-chips">
+                  @for (day of allDays; track day) {
+                    <button
+                      type="button"
+                      class="rr-day-chip"
+                      [class.rr-day-chip--active]="roundRobinDays().includes(day)"
+                      (click)="toggleDay(day)"
+                    >{{ day.charAt(0).toUpperCase() + day.slice(1, 3) }}</button>
+                  }
+                </div>
+              </div>
+              <div class="rr-field">
+                <label class="rr-label">Time slots</label>
+                <div class="rr-time-slots">
+                  @for (slot of roundRobinTimeSlots(); track slot; let i = $index) {
+                    <span class="rr-time-chip">
+                      {{ slot }}
+                      <button class="rr-time-remove" (click)="removeTimeSlot(i)">&times;</button>
+                    </span>
+                  }
+                </div>
+                <div class="rr-time-add">
+                  <input
+                    type="time"
+                    [ngModel]="roundRobinNewTime()"
+                    (ngModelChange)="roundRobinNewTime.set($event)"
+                    name="roundRobinNewTime"
+                    class="rr-time-input"
+                  />
+                  <button class="btn btn-primary btn-sm" (click)="addTimeSlot()">Add</button>
+                </div>
+              </div>
+              <button
+                class="btn btn-primary"
+                (click)="generateRoundRobin()"
+                [disabled]="roundRobinTimeSlots().length === 0 || roundRobinDays().length === 0"
+              >Generate fixtures</button>
+            </div>
+          }
+        </div>
+      }
       <form class="invite-form" (ngSubmit)="createFixture()">
         <select
           [ngModel]="fixtureHomeId()"
@@ -409,8 +472,15 @@
           (ngModelChange)="fixtureDate.set($event)"
           name="fixtureDate"
         />
-        <button type="submit" class="btn btn-primary">Add fixture</button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="fixtureHomeId() && fixtureHomeId() === fixtureAwayId()"
+        >Add fixture</button>
       </form>
+      @if (fixtureHomeId() && fixtureHomeId() === fixtureAwayId()) {
+        <p class="error-msg">A team cannot play itself.</p>
+      }
 
       @if (leagueDetail()!.fixtures.length === 0) {
         <p class="empty-state">No fixtures yet.</p>
@@ -480,44 +550,54 @@
               <tr class="goals-row">
                 <td colspan="6">
                   <div class="goals-cell">
-                    <div class="goals-add">
-                      <select
-                        [ngModel]="getGoalScorerId(fixture.id)"
-                        (ngModelChange)="setGoalScorerId(fixture.id, $event)"
-                        name="goalScorer-{{ fixture.id }}"
-                      >
-                        <option value="">Add scorer…</option>
-                        @for (user of users(); track user.id) {
-                          <option [value]="user.id">{{ user.email }}</option>
+                    <button
+                      class="goals-toggle"
+                      (click)="toggleGoals(fixture.id)"
+                    >
+                      <span class="goals-toggle-arrow" [class.goals-toggle-arrow--open]="isGoalsOpen(fixture.id)">&#9654;</span>
+                      Scorers
+                      @if (groupedGoals(fixture.id).length) {
+                        <span class="goals-toggle-count">({{ goalCount(fixture.id) }})</span>
+                      }
+                    </button>
+                    @if (isGoalsOpen(fixture.id)) {
+                      <div class="goals-content">
+                        <div class="goals-add">
+                          <select
+                            [ngModel]="getGoalScorerId(fixture.id)"
+                            (ngModelChange)="setGoalScorerId(fixture.id, $event)"
+                            name="goalScorer-{{ fixture.id }}"
+                          >
+                            <option value="">Add scorer…</option>
+                            @for (user of users(); track user.id) {
+                              <option [value]="user.id">{{ user.email }}</option>
+                            }
+                          </select>
+                          <button
+                            class="btn btn-primary btn-sm"
+                            (click)="createGoal(fixture.id)"
+                          >Add scorer</button>
+                        </div>
+                        @if (groupedGoals(fixture.id).length) {
+                          <ul class="goals-list">
+                            @for (entry of groupedGoals(fixture.id); track entry.scorerId) {
+                              <li>
+                                <span>{{ entry.scorerName }} <strong>({{ entry.count }})</strong></span>
+                                <span class="scorer-controls">
+                                  <button
+                                    class="btn-icon"
+                                    (click)="addGoalForScorer(fixture.id, entry.scorerId)"
+                                  >+</button>
+                                  <button
+                                    class="btn-icon btn-icon--danger"
+                                    (click)="deleteGoal(entry.goalIds[entry.goalIds.length - 1])"
+                                  >−</button>
+                                </span>
+                              </li>
+                            }
+                          </ul>
                         }
-                      </select>
-                      <button
-                        class="btn btn-primary btn-sm"
-                        (click)="createGoal(fixture.id)"
-                      >Add scorer</button>
-                    </div>
-                    @if (groupedGoals(fixture.id).length) {
-                      <ul class="goals-list">
-                        @for (entry of groupedGoals(fixture.id); track entry.scorerId) {
-                          <li>
-                            <span>{{ entry.scorerName }}
-                              @if (entry.count > 1) {
-                                <strong>({{ entry.count }})</strong>
-                              }
-                            </span>
-                            <span class="scorer-controls">
-                              <button
-                                class="btn-icon"
-                                (click)="addGoalForScorer(fixture.id, entry.scorerId)"
-                              >+</button>
-                              <button
-                                class="btn-icon btn-icon--danger"
-                                (click)="deleteGoal(entry.goalIds[entry.goalIds.length - 1])"
-                              >−</button>
-                            </span>
-                          </li>
-                        }
-                      </ul>
+                      </div>
                     }
                   </div>
                 </td>

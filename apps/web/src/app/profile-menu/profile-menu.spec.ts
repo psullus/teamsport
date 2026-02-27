@@ -186,12 +186,12 @@ describe('ProfileMenu', () => {
       fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
     );
     const controlItem = items.find((el) => el.textContent?.includes('Control panel'));
-    const adminItem = items.find((el) => el.textContent?.includes('Organisation dashboard'));
+    const adminItem = items.find((el) => el.textContent?.includes('Account settings'));
     expect(controlItem).toBeTruthy();
     expect(adminItem).toBeTruthy();
   });
 
-  it('should show "Organisation dashboard" link for ADMIN user', async () => {
+  it('should show "Account settings" link for ADMIN user', async () => {
     authService._setUser({
       ...defaultUser,
       organisationName: 'Test FC',
@@ -205,7 +205,7 @@ describe('ProfileMenu', () => {
       fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
     );
     const controlItem = items.find((el) => el.textContent?.includes('Control panel'));
-    const adminItem = items.find((el) => el.textContent?.includes('Organisation dashboard'));
+    const adminItem = items.find((el) => el.textContent?.includes('Account settings'));
     expect(controlItem).toBeFalsy();
     expect(adminItem).toBeTruthy();
   });
@@ -225,7 +225,7 @@ describe('ProfileMenu', () => {
       fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
     );
     const controlItem = items.find((el) => el.textContent?.includes('Control panel'));
-    const adminItem = items.find((el) => el.textContent?.includes('Organisation dashboard'));
+    const adminItem = items.find((el) => el.textContent?.includes('Account settings'));
     expect(controlItem).toBeFalsy();
     expect(adminItem).toBeFalsy();
   });

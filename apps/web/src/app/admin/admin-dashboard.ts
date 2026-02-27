@@ -49,6 +49,13 @@ export class AdminDashboard implements OnInit {
   fixtureAwayId = signal('');
   fixtureDate = signal('');
   goalScorerIds = signal<Record<string, string>>({});
+  openGoals = signal<Record<string, boolean>>({});
+  showRoundRobinForm = signal(false);
+  roundRobinDays = signal<string[]>(['monday']);
+  roundRobinTimeSlots = signal<string[]>(['19:00']);
+  roundRobinNewTime = signal('19:00');
+  roundRobinConfirmRestart = signal(false);
+  allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
   roles: Role[] = [ROLES.ADMIN, ROLES.USER];
 
@@ -333,10 +340,42 @@ export class AdminDashboard implements OnInit {
     this.loadLeagues();
   }
 
+  toggleRoundRobinForm() {
+    this.showRoundRobinForm.update((v) => !v);
+    this.roundRobinConfirmRestart.set(false);
+  }
+
+  toggleDay(day: string) {
+    this.roundRobinDays.update((days) =>
+      days.includes(day) ? days.filter((d) => d !== day) : [...days, day],
+    );
+  }
+
+  addTimeSlot() {
+    const time = this.roundRobinNewTime();
+    if (!time) return;
+    const current = this.roundRobinTimeSlots();
+    if (current.includes(time)) return;
+    this.roundRobinTimeSlots.set([...current, time]);
+    this.roundRobinNewTime.set('19:00');
+  }
+
+  removeTimeSlot(index: number) {
+    this.roundRobinTimeSlots.update((slots) => slots.filter((_, i) => i !== index));
+  }
+
   async generateRoundRobin() {
     const league = this.selectedLeague();
     if (!league) return;
-    await this.authService.generateRoundRobin(league.id);
+    const detail = this.leagueDetail();
+    const isStarted = detail?.league.started ?? false;
+    await this.authService.generateRoundRobin(league.id, {
+      days: this.roundRobinDays(),
+      timeSlots: this.roundRobinTimeSlots(),
+      force: isStarted,
+    });
+    this.showRoundRobinForm.set(false);
+    this.roundRobinConfirmRestart.set(false);
     this.loadLeagueDetail(league.id);
   }
 
@@ -383,6 +422,18 @@ export class AdminDashboard implements OnInit {
     await this.authService.deleteFixture(fixtureId);
     const league = this.selectedLeague();
     if (league) this.loadLeagueDetail(league.id);
+  }
+
+  toggleGoals(fixtureId: string) {
+    this.openGoals.update((m) => ({ ...m, [fixtureId]: !m[fixtureId] }));
+  }
+
+  isGoalsOpen(fixtureId: string): boolean {
+    return this.openGoals()[fixtureId] ?? false;
+  }
+
+  goalCount(fixtureId: string): number {
+    return this.groupedGoals(fixtureId).reduce((sum, e) => sum + e.count, 0);
   }
 
   getGoalScorerId(fixtureId: string): string {
