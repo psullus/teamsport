@@ -1,7 +1,10 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import {
+  AuthService, POSITIONS_BY_SPORT,
+  type ClubMembership, type SportType,
+} from '../services/auth.service';
 
 @Component({
   selector: 'app-settings',
@@ -18,6 +21,7 @@ export class Settings implements OnInit {
   success = signal('');
   error = signal('');
   saving = signal(false);
+  memberships = signal<ClubMembership[]>([]);
 
   constructor(private authService: AuthService) {}
 
@@ -28,6 +32,27 @@ export class Settings implements OnInit {
       this.lastName = user.lastName ?? '';
       this.phone = user.phone ?? '';
       this.avatarPreview.set(user.avatarUrl);
+    }
+    this.loadMemberships();
+  }
+
+  async loadMemberships() {
+    try {
+      this.memberships.set(await this.authService.listMyMemberships());
+    } catch {
+      this.memberships.set([]);
+    }
+  }
+
+  positionsForClub(clubType: SportType): string[] {
+    return POSITIONS_BY_SPORT[clubType] ?? [];
+  }
+
+  async onPositionChange(clubId: string, position: string) {
+    try {
+      await this.authService.updateMyPosition(clubId, position || null);
+    } catch {
+      // silently fail
     }
   }
 

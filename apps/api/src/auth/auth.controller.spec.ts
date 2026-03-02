@@ -37,9 +37,12 @@ const mockUserService = {
   changeRole: vi.fn().mockResolvedValue({ ...mockUser, role: 'CONTROL' }),
   getUserClubsWithTeams: vi.fn().mockResolvedValue([
     {
-      id: 'club-1', name: 'Club', organisationId: 'org-1',
+      id: 'club-1', name: 'Club', type: 'Touch', organisationId: 'org-1',
       teams: [{ id: 'team-1', name: 'Team', clubId: 'club-1' }],
     },
+  ]),
+  getUserClubMemberships: vi.fn().mockResolvedValue([
+    { clubId: 'club-1', clubName: 'Club', clubType: 'Touch', position: 'Wing' },
   ]),
   updateProfile: vi.fn().mockResolvedValue({
     ...mockUser, firstName: 'John', lastName: 'Doe', phone: '555-1234',
@@ -59,13 +62,19 @@ const mockInviteService = {
 };
 
 const mockClubService = {
-  create: vi.fn().mockResolvedValue({ id: 'club-1', name: 'Club', organisationId: 'org-1' }),
+  create: vi.fn().mockResolvedValue({
+    id: 'club-1', name: 'Club', type: 'Touch', organisationId: 'org-1',
+  }),
   listByOrganisation: vi.fn().mockResolvedValue([
-    { id: 'club-1', name: 'Club', organisationId: 'org-1' },
+    { id: 'club-1', name: 'Club', type: 'Touch', organisationId: 'org-1' },
   ]),
   listUsers: vi.fn().mockResolvedValue([mockUser]),
   addUser: vi.fn().mockResolvedValue(undefined),
   removeUser: vi.fn().mockResolvedValue(undefined),
+  update: vi.fn().mockResolvedValue({
+    id: 'club-1', name: 'Updated Club', type: 'Soccer', organisationId: 'org-1',
+  }),
+  updatePosition: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockTeamService = {
@@ -142,11 +151,12 @@ describe('AuthController', () => {
   });
 
   describe('signup', () => {
-    it('should create user, set cookie, and return user', async () => {
+    it('should create user with club type, set cookie, and return user', async () => {
       const result = await controller.signup(
         {
           organisationName: 'Org',
           clubName: 'Club',
+          clubType: 'Touch',
           teamName: 'Team',
           email: 'a@b.com',
           password: 'password123',
@@ -157,7 +167,7 @@ describe('AuthController', () => {
       expect(result).toEqual({ user: mockUser });
       expect(res.cookie).toHaveBeenCalled();
       expect(mockAuthService.signup).toHaveBeenCalledWith(
-        'Org', 'a@b.com', 'password123', 'Club', 'Team',
+        'Org', 'a@b.com', 'password123', 'Club', 'Touch', 'Team',
       );
     });
   });
@@ -200,6 +210,30 @@ describe('AuthController', () => {
       expect(result[0].name).toBe('Club');
       expect(result[0].teams).toHaveLength(1);
       expect(mockUserService.getUserClubsWithTeams).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('getMyMemberships', () => {
+    it('should return club memberships with positions', async () => {
+      const result = await controller.getMyMemberships({ id: 'user-1', role: 'USER' });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].clubName).toBe('Club');
+      expect(result[0].position).toBe('Wing');
+      expect(mockUserService.getUserClubMemberships).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('updateMyPosition', () => {
+    it('should update position and return success', async () => {
+      const result = await controller.updateMyPosition(
+        { id: 'user-1', role: 'USER' },
+        'club-1',
+        { position: 'Wing' },
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(mockClubService.updatePosition).toHaveBeenCalledWith('club-1', 'user-1', 'Wing');
     });
   });
 
@@ -259,14 +293,14 @@ describe('AuthController', () => {
   });
 
   describe('createClub', () => {
-    it('should create a club in the user org', async () => {
+    it('should create a club with type in the user org', async () => {
       const result = await controller.createClub(
-        { name: 'New Club' },
+        { name: 'New Club', type: 'Touch' },
         { id: 'user-1', role: 'ADMIN' },
       );
 
-      expect(result).toEqual({ id: 'club-1', name: 'Club', organisationId: 'org-1' });
-      expect(mockClubService.create).toHaveBeenCalledWith('New Club', 'org-1');
+      expect(result).toEqual({ id: 'club-1', name: 'Club', type: 'Touch', organisationId: 'org-1' });
+      expect(mockClubService.create).toHaveBeenCalledWith('New Club', 'Touch', 'org-1');
     });
   });
 
@@ -303,6 +337,16 @@ describe('AuthController', () => {
 
       expect(result).toEqual({ success: true });
       expect(mockClubService.removeUser).toHaveBeenCalledWith('club-1', 'user-1');
+    });
+  });
+
+  describe('updateClub', () => {
+    it('should update club name and type', async () => {
+      const result = await controller.updateClub('club-1', { name: 'Updated Club', type: 'Soccer' });
+
+      expect(result.name).toBe('Updated Club');
+      expect(result.type).toBe('Soccer');
+      expect(mockClubService.update).toHaveBeenCalledWith('club-1', 'Updated Club', 'Soccer');
     });
   });
 

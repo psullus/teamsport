@@ -76,6 +76,27 @@
       </button>
     </form>
 
+    @if (memberships().length > 0) {
+      <div class="memberships-section">
+        <h2>Your clubs</h2>
+        @for (m of memberships(); track m.clubId) {
+          <div class="membership-row">
+            <span class="membership-club">{{ m.clubName }} <span class="sport-type-badge">{{ m.clubType }}</span></span>
+            <select
+              [ngModel]="m.position ?? ''"
+              (ngModelChange)="onPositionChange(m.clubId, $event)"
+              [name]="'position-' + m.clubId"
+            >
+              <option value="">No position</option>
+              @for (pos of positionsForClub(m.clubType); track pos) {
+                <option [value]="pos">{{ pos }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+    }
+
     <p class="auth-footer"><a routerLink="/">Back to home</a></p>
   </div>
 </div>

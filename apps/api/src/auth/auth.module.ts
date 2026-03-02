@@ -15,6 +15,7 @@ import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
 import { InviteEntity } from './entities/invite.entity';
 import { ClubEntity } from './entities/club.entity';
+import { ClubMemberEntity } from './entities/club-member.entity';
 import { TeamEntity } from './entities/team.entity';
 import { LeagueEntity } from './entities/league.entity';
 import { FixtureEntity } from './entities/fixture.entity';
@@ -28,6 +29,7 @@ import { GoalEntity } from './entities/goal.entity';
       EmailVerificationTokenEntity,
       InviteEntity,
       ClubEntity,
+      ClubMemberEntity,
       TeamEntity,
       LeagueEntity,
       FixtureEntity,

@@ -8,6 +8,7 @@ import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
 import { ClubEntity } from './entities/club.entity';
+import { ClubMemberEntity } from './entities/club-member.entity';
 import { TeamEntity } from './entities/team.entity';
 
 const mockUserRepo = {
@@ -31,6 +32,11 @@ const mockEmailTokenRepo = {
 
 const mockClubRepo = {
   create: vi.fn((data) => ({ ...data, id: 'club-1' })),
+  save: vi.fn((entity) => Promise.resolve(entity)),
+};
+
+const mockClubMemberRepo = {
+  create: vi.fn((data) => ({ ...data, id: 'cm-1' })),
   save: vi.fn((entity) => Promise.resolve(entity)),
 };
 
@@ -60,6 +66,7 @@ describe('AuthService', () => {
           useValue: mockEmailTokenRepo,
         },
         { provide: getRepositoryToken(ClubEntity), useValue: mockClubRepo },
+        { provide: getRepositoryToken(ClubMemberEntity), useValue: mockClubMemberRepo },
         { provide: getRepositoryToken(TeamEntity), useValue: mockTeamRepo },
         { provide: JwtService, useValue: mockJwtService },
       ],
@@ -121,7 +128,7 @@ describe('AuthService', () => {
   });
 
   describe('signup', () => {
-    it('should create org, user, and return JWT', async () => {
+    it('should create org, club with type, user, membership, and return JWT', async () => {
       mockUserRepo.findOne.mockResolvedValue(null);
       mockOrgRepo.create.mockReturnValue({ id: 'org-1', name: 'Test Org' });
       mockOrgRepo.save.mockImplementation((e) => Promise.resolve(e));
@@ -134,13 +141,15 @@ describe('AuthService', () => {
       });
       mockUserRepo.save.mockImplementation((e) => Promise.resolve(e));
       mockEmailTokenRepo.create.mockReturnValue({ token: 'tok' });
-      mockClubRepo.create.mockReturnValue({ id: 'club-1', name: 'My Club' });
+      mockClubRepo.create.mockReturnValue({ id: 'club-1', name: 'My Club', type: 'Soccer' });
       mockClubRepo.save.mockImplementation((e) => Promise.resolve(e));
+      mockClubMemberRepo.create.mockReturnValue({ id: 'cm-1' });
+      mockClubMemberRepo.save.mockImplementation((e) => Promise.resolve(e));
       mockTeamRepo.create.mockReturnValue({ id: 'team-1', name: 'My Team' });
       mockTeamRepo.save.mockImplementation((e) => Promise.resolve(e));
 
       const result = await service.signup(
-        'Test Org', 'a@b.com', 'password123', 'My Club', 'My Team',
+        'Test Org', 'a@b.com', 'password123', 'My Club', 'Soccer', 'My Team',
       );
 
       expect(result.user.email).toBe('a@b.com');
@@ -149,6 +158,7 @@ describe('AuthService', () => {
       expect(mockOrgRepo.save).toHaveBeenCalled();
       expect(mockUserRepo.save).toHaveBeenCalled();
       expect(mockClubRepo.save).toHaveBeenCalled();
+      expect(mockClubMemberRepo.save).toHaveBeenCalled();
       expect(mockTeamRepo.save).toHaveBeenCalled();
     });
 
@@ -156,7 +166,7 @@ describe('AuthService', () => {
       mockUserRepo.findOne.mockResolvedValue({ id: 'existing' });
 
       await expect(
-        service.signup('Org', 'a@b.com', 'pass', 'Club', 'Team'),
+        service.signup('Org', 'a@b.com', 'pass', 'Club', 'Touch', 'Team'),
       ).rejects.toThrow(ConflictException);
     });
   });

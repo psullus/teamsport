@@ -104,6 +104,15 @@
         placeholder="New club name"
         required
       />
+      <select
+        [ngModel]="clubType()"
+        (ngModelChange)="clubType.set($event)"
+        name="clubType"
+      >
+        @for (sport of sportTypes; track sport) {
+          <option [value]="sport">{{ sport }}</option>
+        }
+      </select>
       <button type="submit" class="btn btn-primary">Create club</button>
     </form>
     @if (clubs().length === 0) {
@@ -113,7 +122,7 @@
         @for (club of clubs(); track club.id) {
           <li class="list-item-row">
             @if (editingClubId() === club.id) {
-              <form class="inline-edit-form" (ngSubmit)="saveClubName()">
+              <form class="inline-edit-form" (ngSubmit)="saveClub()">
                 <input
                   type="text"
                   [ngModel]="editClubName()"
@@ -121,6 +130,15 @@
                   name="editClubName"
                   required
                 />
+                <select
+                  [ngModel]="editClubType()"
+                  (ngModelChange)="editClubType.set($event)"
+                  name="editClubType"
+                >
+                  @for (sport of sportTypes; track sport) {
+                    <option [value]="sport">{{ sport }}</option>
+                  }
+                </select>
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
                 <button type="button" class="btn-link" (click)="cancelEditClub()">Cancel</button>
               </form>
@@ -130,6 +148,7 @@
                 [class.active]="selectedClub()?.id === club.id"
                 (click)="selectClub(club)"
               >{{ club.name }}</button>
+              <span class="sport-type-badge">{{ club.type }}</span>
               <span class="list-item-actions">
                 <button class="btn-link" (click)="startEditClub(club)">Edit</button>
                 <button class="btn-danger" (click)="deleteClub(club.id)">Delete</button>

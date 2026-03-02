@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  AuthService, User, Role, ROLES, Club, Team,
+  AuthService, User, Role, ROLES, Club, Team, SPORT_TYPES,
   type League, type LeagueDetail, type Fixture, type StandingsRow, type TopScorer,
 } from '../services/auth.service';
 
@@ -23,10 +23,13 @@ export class AdminDashboard implements OnInit {
   clubs = signal<Club[]>([]);
   selectedClub = signal<Club | null>(null);
   clubName = signal('');
+  clubType = signal('Touch');
   clubMembers = signal<User[]>([]);
   addClubUserId = signal('');
   editingClubId = signal<string | null>(null);
   editClubName = signal('');
+  editClubType = signal('Touch');
+  sportTypes = SPORT_TYPES;
 
   teams = signal<Team[]>([]);
   selectedTeam = signal<Team | null>(null);
@@ -116,33 +119,39 @@ export class AdminDashboard implements OnInit {
 
   async createClub() {
     const name = this.clubName();
+    const type = this.clubType();
     if (!name) return;
-    await this.authService.createClub(name);
+    await this.authService.createClub(name, type);
     this.clubName.set('');
+    this.clubType.set('Touch');
     this.loadClubs();
   }
 
   startEditClub(club: Club) {
     this.editingClubId.set(club.id);
     this.editClubName.set(club.name);
+    this.editClubType.set(club.type);
   }
 
   cancelEditClub() {
     this.editingClubId.set(null);
     this.editClubName.set('');
+    this.editClubType.set('Touch');
   }
 
-  async saveClubName() {
+  async saveClub() {
     const id = this.editingClubId();
     const name = this.editClubName();
+    const type = this.editClubType();
     if (!id || !name) return;
-    await this.authService.renameClub(id, name);
+    await this.authService.updateClub(id, name, type);
     this.editingClubId.set(null);
     this.editClubName.set('');
+    this.editClubType.set('Touch');
     this.loadClubs();
     const selected = this.selectedClub();
     if (selected?.id === id) {
-      this.selectedClub.set({ ...selected, name });
+      this.selectedClub.set({ ...selected, name, type: type as any });
     }
   }
 

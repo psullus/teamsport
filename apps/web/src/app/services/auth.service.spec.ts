@@ -53,7 +53,7 @@ describe('AuthService', () => {
   });
 
   it('should sign up via HTTP and navigate to /verify-email-notice', async () => {
-    const promise = service.signup('My Org', 'test@example.com', 'pass1234', 'Club', 'Team');
+    const promise = service.signup('My Org', 'test@example.com', 'pass1234', 'Club', 'Touch', 'Team');
 
     const req = httpTesting.expectOne('/api/auth/signup');
     expect(req.request.method).toBe('POST');
@@ -62,6 +62,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       password: 'pass1234',
       clubName: 'Club',
+      clubType: 'Touch',
       teamName: 'Team',
     });
     req.flush({ user: mockUser() });
@@ -131,7 +132,7 @@ describe('AuthService', () => {
 
   it('should logout via POST, clear user, and navigate to /', async () => {
     // First log in
-    const loginPromise = service.signup('Org', 'a@b.com', 'password', 'Club', 'Team');
+    const loginPromise = service.signup('Org', 'a@b.com', 'password', 'Club', 'Touch', 'Team');
     httpTesting.expectOne('/api/auth/signup').flush({ user: mockUser() });
     await loginPromise;
 
@@ -149,7 +150,7 @@ describe('AuthService', () => {
   });
 
   it('should return user initials from organisationName', async () => {
-    const promise = service.signup('River Valley FC', 'rv@example.com', 'password', 'Club', 'Team');
+    const promise = service.signup('River Valley FC', 'rv@example.com', 'password', 'Club', 'Touch', 'Team');
     httpTesting.expectOne('/api/auth/signup').flush({
       user: mockUser({ organisationName: 'River Valley FC', email: 'rv@example.com' }),
     });

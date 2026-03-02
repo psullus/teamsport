@@ -74,6 +74,7 @@ describe('Signup', () => {
       'test@example.com',
       'password123',
       'My Club',
+      'Touch',
       'My Team',
     );
   });

@@ -15,7 +15,7 @@ describe('AdminDashboard', () => {
     listClubUsers: ReturnType<typeof vi.fn>;
     addUserToClub: ReturnType<typeof vi.fn>;
     removeUserFromClub: ReturnType<typeof vi.fn>;
-    renameClub: ReturnType<typeof vi.fn>;
+    updateClub: ReturnType<typeof vi.fn>;
     deleteClub: ReturnType<typeof vi.fn>;
     listTeams: ReturnType<typeof vi.fn>;
     createTeam: ReturnType<typeof vi.fn>;
@@ -48,7 +48,7 @@ describe('AdminDashboard', () => {
       ]),
       inviteUser: vi.fn().mockResolvedValue(undefined),
       listClubs: vi.fn().mockResolvedValue([
-        { id: 'club-1', name: 'Club A', organisationId: 'org-1' },
+        { id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' },
       ]),
       createClub: vi.fn().mockResolvedValue({ id: 'club-2', name: 'Club B' }),
       listClubUsers: vi.fn().mockResolvedValue([
@@ -56,7 +56,7 @@ describe('AdminDashboard', () => {
       ]),
       addUserToClub: vi.fn().mockResolvedValue(undefined),
       removeUserFromClub: vi.fn().mockResolvedValue(undefined),
-      renameClub: vi.fn().mockResolvedValue({ id: 'club-1', name: 'Renamed Club' }),
+      updateClub: vi.fn().mockResolvedValue({ id: 'club-1', name: 'Renamed Club', type: 'Touch' }),
       deleteClub: vi.fn().mockResolvedValue(undefined),
       listTeams: vi.fn().mockResolvedValue([
         { id: 'team-1', name: 'Team A', clubId: 'club-1' },
@@ -197,7 +197,7 @@ describe('AdminDashboard', () => {
     const component = fixture.componentInstance;
     component.clubName.set('New Club');
     await component.createClub();
-    expect(authService.createClub).toHaveBeenCalledWith('New Club');
+    expect(authService.createClub).toHaveBeenCalledWith('New Club', 'Touch');
     expect(component.clubName()).toBe('');
   });
 
@@ -206,7 +206,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    await component.selectClub({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    await component.selectClub({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     expect(component.selectedClub()?.id).toBe('club-1');
     expect(authService.listClubUsers).toHaveBeenCalledWith('club-1');
     expect(authService.listTeams).toHaveBeenCalledWith('club-1');
@@ -246,11 +246,11 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     component.editingClubId.set('club-1');
     component.editClubName.set('Renamed Club');
-    await component.saveClubName();
-    expect(authService.renameClub).toHaveBeenCalledWith('club-1', 'Renamed Club');
+    await component.saveClub();
+    expect(authService.updateClub).toHaveBeenCalledWith('club-1', 'Renamed Club', 'Touch');
     expect(component.editingClubId()).toBeNull();
   });
 
@@ -259,7 +259,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     await component.deleteClub('club-1');
     expect(authService.deleteClub).toHaveBeenCalledWith('club-1');
     expect(component.selectedClub()).toBeNull();
@@ -270,7 +270,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     component.selectedTeam.set({ id: 'team-1', name: 'Team A', clubId: 'club-1' });
     component.editingTeamId.set('team-1');
     component.editTeamName.set('Renamed Team');
@@ -284,7 +284,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     component.selectedTeam.set({ id: 'team-1', name: 'Team A', clubId: 'club-1' });
     await component.deleteTeam('team-1');
     expect(authService.deleteTeam).toHaveBeenCalledWith('team-1');

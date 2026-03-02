@@ -15,6 +15,7 @@ import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
 import { ClubEntity } from './entities/club.entity';
+import { ClubMemberEntity } from './entities/club-member.entity';
 import { TeamEntity } from './entities/team.entity';
 
 const SALT_ROUNDS = 10;
@@ -45,6 +46,8 @@ export class AuthService {
     private emailTokenRepo: Repository<EmailVerificationTokenEntity>,
     @InjectRepository(ClubEntity)
     private clubRepo: Repository<ClubEntity>,
+    @InjectRepository(ClubMemberEntity)
+    private clubMemberRepo: Repository<ClubMemberEntity>,
     @InjectRepository(TeamEntity)
     private teamRepo: Repository<TeamEntity>,
     private jwtService: JwtService,
@@ -55,6 +58,7 @@ export class AuthService {
     email: string,
     password: string,
     clubName: string,
+    clubType: string,
     teamName: string,
   ): Promise<{ user: User; token: string }> {
     const existing = await this.userRepo.findOne({ where: { email } });
@@ -65,7 +69,7 @@ export class AuthService {
     const org = this.orgRepo.create({ name: organisationName });
     await this.orgRepo.save(org);
 
-    const club = this.clubRepo.create({ name: clubName, organisation: org });
+    const club = this.clubRepo.create({ name: clubName, type: clubType, organisation: org });
     await this.clubRepo.save(club);
 
     const team = this.teamRepo.create({ name: teamName, club });
@@ -80,8 +84,8 @@ export class AuthService {
     });
     await this.userRepo.save(user);
 
-    club.members = [user];
-    await this.clubRepo.save(club);
+    const membership = this.clubMemberRepo.create({ user, club });
+    await this.clubMemberRepo.save(membership);
     team.members = [user];
     await this.teamRepo.save(team);
 

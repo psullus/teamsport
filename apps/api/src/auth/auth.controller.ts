@@ -37,6 +37,7 @@ import { CreateClubDto } from './dto/create-club.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { ManageMembershipDto } from './dto/manage-membership.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdatePositionDto } from './dto/update-position.dto';
 import { CreateLeagueDto } from './dto/create-league.dto';
 import { CreateFixtureDto } from './dto/create-fixture.dto';
 import { UpdateFixtureDto } from './dto/update-fixture.dto';
@@ -70,6 +71,7 @@ export class AuthController {
       dto.email,
       dto.password,
       dto.clubName,
+      dto.clubType,
       dto.teamName,
     );
     setTokenCookie(res, token);
@@ -108,6 +110,23 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getMyClubs(@CurrentUser() currentUser: { id: string; role: string }) {
     return this.userService.getUserClubsWithTeams(currentUser.id);
+  }
+
+  @Get('me/memberships')
+  @UseGuards(JwtAuthGuard)
+  async getMyMemberships(@CurrentUser() currentUser: { id: string; role: string }) {
+    return this.userService.getUserClubMemberships(currentUser.id);
+  }
+
+  @Patch('me/memberships/:clubId/position')
+  @UseGuards(JwtAuthGuard)
+  async updateMyPosition(
+    @CurrentUser() currentUser: { id: string; role: string },
+    @Param('clubId') clubId: string,
+    @Body() dto: UpdatePositionDto,
+  ) {
+    await this.clubService.updatePosition(clubId, currentUser.id, dto.position ?? null);
+    return { success: true };
   }
 
   @Get('me')
@@ -219,7 +238,7 @@ export class AuthController {
     @CurrentUser() currentUser: { id: string; role: string },
   ) {
     const user = await this.authService.getMe(currentUser.id);
-    return this.clubService.create(dto.name, user.organisationId);
+    return this.clubService.create(dto.name, dto.type ?? 'Touch', user.organisationId);
   }
 
   @Get('clubs')
@@ -256,8 +275,8 @@ export class AuthController {
   @Patch('clubs/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)
-  async renameClub(@Param('id') id: string, @Body() dto: CreateClubDto) {
-    return this.clubService.rename(id, dto.name);
+  async updateClub(@Param('id') id: string, @Body() dto: CreateClubDto) {
+    return this.clubService.update(id, dto.name, dto.type);
   }
 
   @Delete('clubs/:id')
