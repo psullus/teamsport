@@ -24,6 +24,7 @@ import { InviteService } from './invite.service';
 import { ClubService } from './club.service';
 import { TeamService } from './team.service';
 import { LeagueService } from './league.service';
+import { EventService } from './event.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -42,6 +43,8 @@ import { CreateLeagueDto } from './dto/create-league.dto';
 import { CreateFixtureDto } from './dto/create-fixture.dto';
 import { UpdateFixtureDto } from './dto/update-fixture.dto';
 import { CreateGoalDto } from './dto/create-goal.dto';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { ROLES } from '@teamsport/shared';
 import { setTokenCookie, clearTokenCookie } from './cookie.utils';
 
@@ -62,6 +65,7 @@ export class AuthController {
     private clubService: ClubService,
     private teamService: TeamService,
     private leagueService: LeagueService,
+    private eventService: EventService,
   ) {}
 
   @Post('signup')
@@ -444,6 +448,41 @@ export class AuthController {
   @Roles(ROLES.ADMIN)
   async deleteGoal(@Param('id') id: string) {
     await this.leagueService.deleteGoal(id);
+    return { success: true };
+  }
+
+  // --- Event endpoints ---
+
+  @Post('events')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async createEvent(
+    @Body() dto: CreateEventDto,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.eventService.create(user.organisationId, dto);
+  }
+
+  @Get('events')
+  @UseGuards(JwtAuthGuard)
+  async listEvents(@CurrentUser() currentUser: { id: string; role: string }) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.eventService.listByOrganisation(user.organisationId);
+  }
+
+  @Patch('events/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async updateEvent(@Param('id') id: string, @Body() dto: UpdateEventDto) {
+    return this.eventService.update(id, dto);
+  }
+
+  @Delete('events/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async deleteEvent(@Param('id') id: string) {
+    await this.eventService.delete(id);
     return { success: true };
   }
 }

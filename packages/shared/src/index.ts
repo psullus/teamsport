@@ -135,6 +135,22 @@ export interface TopScorer {
   fixtures: ScorerFixture[];
 }
 
+export interface Event {
+  id: string;
+  title: string;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  allDay: boolean;
+  primaryContact: string | null;
+  secondaryContact: string | null;
+  hostedByName: string;
+  location: string | null;
+  description: string | null;
+  organisationId: string;
+  createdAt: string;
+}
+
 export interface LeagueDetail {
   league: League;
   participants: Team[];

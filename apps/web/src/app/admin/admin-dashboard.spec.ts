@@ -35,6 +35,10 @@ describe('AdminDashboard', () => {
     deleteFixture: ReturnType<typeof vi.fn>;
     createGoal: ReturnType<typeof vi.fn>;
     deleteGoal: ReturnType<typeof vi.fn>;
+    listEvents: ReturnType<typeof vi.fn>;
+    createEvent: ReturnType<typeof vi.fn>;
+    updateEvent: ReturnType<typeof vi.fn>;
+    deleteEvent: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -105,6 +109,16 @@ describe('AdminDashboard', () => {
       deleteFixture: vi.fn().mockResolvedValue(undefined),
       createGoal: vi.fn().mockResolvedValue({ id: 'goal-1' }),
       deleteGoal: vi.fn().mockResolvedValue(undefined),
+      listEvents: vi.fn().mockResolvedValue([{
+        id: 'event-1', title: 'Training', date: '2026-03-10',
+        startTime: '18:00', endTime: '19:30', allDay: false,
+        primaryContact: null, secondaryContact: null, hostedByName: 'My Club',
+        location: 'Main Pitch', description: null, organisationId: 'org-1',
+        createdAt: '2026-03-01T00:00:00.000Z',
+      }]),
+      createEvent: vi.fn().mockResolvedValue({ id: 'event-2', title: 'Match' }),
+      updateEvent: vi.fn().mockResolvedValue({ id: 'event-1', title: 'Updated Training' }),
+      deleteEvent: vi.fn().mockResolvedValue(undefined),
     };
     await TestBed.configureTestingModule({
       imports: [AdminDashboard],
@@ -219,10 +233,11 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const tabs = el.querySelectorAll('.sidebar-btn');
-    expect(tabs.length).toBe(3);
+    expect(tabs.length).toBe(4);
     expect(tabs[0].textContent).toContain('Members');
     expect(tabs[1].textContent).toContain('Clubs');
     expect(tabs[2].textContent).toContain('Leagues');
+    expect(tabs[3].textContent).toContain('Events');
     expect(tabs[0].classList.contains('sidebar-btn--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Invite a member');
   });
@@ -371,5 +386,53 @@ describe('AdminDashboard', () => {
       days: ['monday'], timeSlots: ['19:00'], force: false,
     });
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
+  });
+
+  it('should load events on init', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(authService.listEvents).toHaveBeenCalled();
+    expect(fixture.componentInstance.events()).toHaveLength(1);
+  });
+
+  it('should switch to Events tab', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const eventsTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
+    eventsTab.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeTab()).toBe('events');
+    expect(eventsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(el.querySelector('h2')?.textContent).toContain('Create Event');
+  });
+
+  it('should create an event', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.eventTitle.set('New Match');
+    component.eventDate.set('2026-04-01');
+    component.eventHostedByName.set('My Club');
+    await component.createEvent();
+    expect(authService.createEvent).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'New Match',
+      date: '2026-04-01',
+      hostedByName: 'My Club',
+    }));
+    expect(component.eventTitle()).toBe('');
+  });
+
+  it('should delete an event', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.deleteEvent('event-1');
+    expect(authService.deleteEvent).toHaveBeenCalledWith('event-1');
   });
 });

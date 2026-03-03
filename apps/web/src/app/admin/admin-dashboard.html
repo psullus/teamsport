@@ -18,6 +18,11 @@
         [class.sidebar-btn--active]="activeTab() === 'leagues'"
         (click)="setTab('leagues')"
       >Leagues</button>
+      <button
+        class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'events'"
+        (click)="setTab('events')"
+      >Events</button>
     </nav>
 
     <main class="dashboard-main">
@@ -702,6 +707,230 @@
     </section>
     }
   }
+  }
+
+  @if (activeTab() === 'events') {
+  <section class="dashboard-section">
+    <h2>Create Event</h2>
+    <form class="event-form" (ngSubmit)="createEvent()">
+      <div class="event-form-row">
+        <input
+          type="text"
+          [ngModel]="eventTitle()"
+          (ngModelChange)="eventTitle.set($event)"
+          name="eventTitle"
+          placeholder="Event title"
+          required
+        />
+        <input
+          type="date"
+          [ngModel]="eventDate()"
+          (ngModelChange)="eventDate.set($event)"
+          name="eventDate"
+          required
+        />
+      </div>
+      <div class="event-form-row">
+        <label class="event-checkbox">
+          <input
+            type="checkbox"
+            [ngModel]="eventAllDay()"
+            (ngModelChange)="eventAllDay.set($event)"
+            name="eventAllDay"
+          />
+          All day
+        </label>
+        @if (!eventAllDay()) {
+          <input
+            type="time"
+            [ngModel]="eventStartTime()"
+            (ngModelChange)="eventStartTime.set($event)"
+            name="eventStartTime"
+            placeholder="Start time"
+          />
+          <input
+            type="time"
+            [ngModel]="eventEndTime()"
+            (ngModelChange)="eventEndTime.set($event)"
+            name="eventEndTime"
+            placeholder="End time"
+          />
+        }
+      </div>
+      <div class="event-form-row">
+        <input
+          type="text"
+          [ngModel]="eventHostedByName()"
+          (ngModelChange)="eventHostedByName.set($event)"
+          name="eventHostedByName"
+          placeholder="Hosted by"
+          required
+        />
+        <input
+          type="text"
+          [ngModel]="eventLocation()"
+          (ngModelChange)="eventLocation.set($event)"
+          name="eventLocation"
+          placeholder="Location"
+        />
+      </div>
+      <div class="event-form-row">
+        <input
+          type="text"
+          [ngModel]="eventPrimaryContact()"
+          (ngModelChange)="eventPrimaryContact.set($event)"
+          name="eventPrimaryContact"
+          placeholder="Primary contact"
+        />
+        <input
+          type="text"
+          [ngModel]="eventSecondaryContact()"
+          (ngModelChange)="eventSecondaryContact.set($event)"
+          name="eventSecondaryContact"
+          placeholder="Secondary contact"
+        />
+      </div>
+      <textarea
+        [ngModel]="eventDescription()"
+        (ngModelChange)="eventDescription.set($event)"
+        name="eventDescription"
+        placeholder="Description"
+        rows="3"
+      ></textarea>
+      <button type="submit" class="btn btn-primary">Create event</button>
+    </form>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Events</h2>
+    @if (events().length === 0) {
+      <p class="empty-state">No events yet.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (event of events(); track event.id) {
+          <li class="event-list-item">
+            @if (editingEventId() === event.id) {
+              <form class="event-form" (ngSubmit)="saveEvent()">
+                <div class="event-form-row">
+                  <input
+                    type="text"
+                    [ngModel]="editEventTitle()"
+                    (ngModelChange)="editEventTitle.set($event)"
+                    name="editEventTitle"
+                    required
+                  />
+                  <input
+                    type="date"
+                    [ngModel]="editEventDate()"
+                    (ngModelChange)="editEventDate.set($event)"
+                    name="editEventDate"
+                    required
+                  />
+                </div>
+                <div class="event-form-row">
+                  <label class="event-checkbox">
+                    <input
+                      type="checkbox"
+                      [ngModel]="editEventAllDay()"
+                      (ngModelChange)="editEventAllDay.set($event)"
+                      name="editEventAllDay"
+                    />
+                    All day
+                  </label>
+                  @if (!editEventAllDay()) {
+                    <input
+                      type="time"
+                      [ngModel]="editEventStartTime()"
+                      (ngModelChange)="editEventStartTime.set($event)"
+                      name="editEventStartTime"
+                    />
+                    <input
+                      type="time"
+                      [ngModel]="editEventEndTime()"
+                      (ngModelChange)="editEventEndTime.set($event)"
+                      name="editEventEndTime"
+                    />
+                  }
+                </div>
+                <div class="event-form-row">
+                  <input
+                    type="text"
+                    [ngModel]="editEventHostedByName()"
+                    (ngModelChange)="editEventHostedByName.set($event)"
+                    name="editEventHostedByName"
+                    required
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="editEventLocation()"
+                    (ngModelChange)="editEventLocation.set($event)"
+                    name="editEventLocation"
+                    placeholder="Location"
+                  />
+                </div>
+                <div class="event-form-row">
+                  <input
+                    type="text"
+                    [ngModel]="editEventPrimaryContact()"
+                    (ngModelChange)="editEventPrimaryContact.set($event)"
+                    name="editEventPrimaryContact"
+                    placeholder="Primary contact"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="editEventSecondaryContact()"
+                    (ngModelChange)="editEventSecondaryContact.set($event)"
+                    name="editEventSecondaryContact"
+                    placeholder="Secondary contact"
+                  />
+                </div>
+                <textarea
+                  [ngModel]="editEventDescription()"
+                  (ngModelChange)="editEventDescription.set($event)"
+                  name="editEventDescription"
+                  placeholder="Description"
+                  rows="3"
+                ></textarea>
+                <div class="event-form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                  <button type="button" class="btn-link" (click)="cancelEditEvent()">Cancel</button>
+                </div>
+              </form>
+            } @else {
+              <div class="event-info">
+                <strong>{{ event.title }}</strong>
+                <span class="event-meta">
+                  {{ event.date }}
+                  @if (event.allDay) {
+                    — All day
+                  } @else if (event.startTime) {
+                    — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                  }
+                </span>
+                <span class="event-meta">Hosted by {{ event.hostedByName }}</span>
+                @if (event.location) {
+                  <span class="event-meta">{{ event.location }}</span>
+                }
+                @if (event.primaryContact) {
+                  <span class="event-meta">Contact: {{ event.primaryContact }}</span>
+                }
+                @if (event.secondaryContact) {
+                  <span class="event-meta">{{ event.secondaryContact }}</span>
+                }
+                @if (event.description) {
+                  <span class="event-meta">{{ event.description }}</span>
+                }
+              </div>
+              <span class="list-item-actions">
+                <button class="btn-link" (click)="startEditEvent(event)">Edit</button>
+                <button class="btn-danger" (click)="deleteEvent(event.id)">Delete</button>
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
   }
     </main>
   </div>

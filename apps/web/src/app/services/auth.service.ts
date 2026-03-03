@@ -6,6 +6,7 @@ import { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
 import type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
   League, LeagueDetail, Fixture, Goal, SportType, ClubMembership,
+  Event,
 } from '@teamsport/shared';
 
 export { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
@@ -13,6 +14,7 @@ export type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
   League, LeagueDetail, LeagueType, FixtureStatus, Fixture, Goal,
   ScorerFixture, StandingsRow, TopScorer, SportType, ClubMembership,
+  Event,
 } from '@teamsport/shared';
 
 interface AuthResponse {
@@ -300,6 +302,22 @@ export class AuthService {
 
   async deleteGoal(goalId: string): Promise<void> {
     await firstValueFrom(this.http.delete(`/api/auth/goals/${goalId}`));
+  }
+
+  async listEvents(): Promise<Event[]> {
+    return firstValueFrom(this.http.get<Event[]>('/api/auth/events'));
+  }
+
+  async createEvent(data: Omit<Event, 'id' | 'createdAt' | 'organisationId'>): Promise<Event> {
+    return firstValueFrom(this.http.post<Event>('/api/auth/events', data));
+  }
+
+  async updateEvent(id: string, data: Partial<Omit<Event, 'id' | 'createdAt' | 'organisationId'>>): Promise<Event> {
+    return firstValueFrom(this.http.patch<Event>(`/api/auth/events/${id}`, data));
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/events/${id}`));
   }
 
   private restoreSession(): void {

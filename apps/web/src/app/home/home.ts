@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import {
   AuthService,
   type ClubWithTeams, type Team, type User,
-  type League, type LeagueDetail,
+  type League, type LeagueDetail, type Event,
 } from '../services/auth.service';
 
 @Component({
@@ -24,6 +24,23 @@ export class Home {
   selectedLeague = signal<League | null>(null);
   leagueDetail = signal<LeagueDetail | null>(null);
 
+  events = signal<Event[]>([]);
+  eventTab = signal<'upcoming' | 'past'>('upcoming');
+
+  upcomingEvents = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.events()
+      .filter((e) => e.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  });
+
+  pastEvents = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.events()
+      .filter((e) => e.date < today)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  });
+
   selectedTeams = computed<Team[]>(() => this.selectedClub()?.teams ?? []);
 
   constructor(public auth: AuthService) {
@@ -31,6 +48,7 @@ export class Home {
       if (this.auth.isLoggedIn()) {
         this.loadClubs();
         this.loadLeagues();
+        this.loadEvents();
       }
     });
   }
@@ -76,6 +94,14 @@ export class Home {
       this.leagues.set(await this.auth.listLeagues());
     } catch {
       this.leagues.set([]);
+    }
+  }
+
+  async loadEvents(): Promise<void> {
+    try {
+      this.events.set(await this.auth.listEvents());
+    } catch {
+      this.events.set([]);
     }
   }
 

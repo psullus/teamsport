@@ -69,6 +69,88 @@
         </main>
       </div>
 
+      @if (events().length > 0) {
+        <section class="events-section">
+          <h2 class="events-heading">Events</h2>
+          <div class="event-tabs">
+            <button
+              class="event-tab-btn"
+              [class.event-tab-btn--active]="eventTab() === 'upcoming'"
+              (click)="eventTab.set('upcoming')"
+            >Upcoming</button>
+            <button
+              class="event-tab-btn"
+              [class.event-tab-btn--active]="eventTab() === 'past'"
+              (click)="eventTab.set('past')"
+            >Past</button>
+          </div>
+
+          @if (eventTab() === 'upcoming') {
+            @if (upcomingEvents().length === 0) {
+              <p class="teams-empty">No upcoming events.</p>
+            } @else {
+              <div class="event-cards">
+                @for (event of upcomingEvents(); track event.id) {
+                  <div class="event-card">
+                    <h3>{{ event.title }}</h3>
+                    <span class="event-card-date">
+                      {{ event.date }}
+                      @if (event.allDay) {
+                        — All day
+                      } @else if (event.startTime) {
+                        — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                      }
+                    </span>
+                    <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
+                    @if (event.location) {
+                      <span class="event-card-meta">{{ event.location }}</span>
+                    }
+                    @if (event.primaryContact) {
+                      <span class="event-card-meta">Contact: {{ event.primaryContact }}</span>
+                    }
+                    @if (event.secondaryContact) {
+                      <span class="event-card-meta">{{ event.secondaryContact }}</span>
+                    }
+                    @if (event.description) {
+                      <p class="event-card-desc">{{ event.description }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          @if (eventTab() === 'past') {
+            @if (pastEvents().length === 0) {
+              <p class="teams-empty">No past events.</p>
+            } @else {
+              <div class="event-cards">
+                @for (event of pastEvents(); track event.id) {
+                  <div class="event-card event-card--past">
+                    <h3>{{ event.title }}</h3>
+                    <span class="event-card-date">
+                      {{ event.date }}
+                      @if (event.allDay) {
+                        — All day
+                      } @else if (event.startTime) {
+                        — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                      }
+                    </span>
+                    <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
+                    @if (event.location) {
+                      <span class="event-card-meta">{{ event.location }}</span>
+                    }
+                    @if (event.description) {
+                      <p class="event-card-desc">{{ event.description }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </section>
+      }
+
       @if (leagues().length > 0) {
         <section class="leagues-section">
           <h2 class="leagues-heading">Leagues</h2>

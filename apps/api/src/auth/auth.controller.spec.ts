@@ -9,6 +9,7 @@ import { InviteService } from './invite.service';
 import { ClubService } from './club.service';
 import { TeamService } from './team.service';
 import { LeagueService } from './league.service';
+import { EventService } from './event.service';
 
 const mockUser = {
   id: 'user-1',
@@ -120,6 +121,31 @@ const mockLeagueService = {
   deleteGoal: vi.fn().mockResolvedValue(undefined),
 };
 
+const mockEventService = {
+  create: vi.fn().mockResolvedValue({
+    id: 'event-1', title: 'Training', date: '2026-03-10',
+    startTime: '18:00', endTime: '19:30', allDay: false,
+    primaryContact: null, secondaryContact: null, hostedByName: 'My Club',
+    location: 'Main Pitch', description: null, organisationId: 'org-1',
+    createdAt: '2026-03-01T00:00:00.000Z',
+  }),
+  listByOrganisation: vi.fn().mockResolvedValue([{
+    id: 'event-1', title: 'Training', date: '2026-03-10',
+    startTime: '18:00', endTime: '19:30', allDay: false,
+    primaryContact: null, secondaryContact: null, hostedByName: 'My Club',
+    location: 'Main Pitch', description: null, organisationId: 'org-1',
+    createdAt: '2026-03-01T00:00:00.000Z',
+  }]),
+  update: vi.fn().mockResolvedValue({
+    id: 'event-1', title: 'Updated Training', date: '2026-03-10',
+    startTime: '18:00', endTime: '19:30', allDay: false,
+    primaryContact: null, secondaryContact: null, hostedByName: 'My Club',
+    location: 'Main Pitch', description: null, organisationId: 'org-1',
+    createdAt: '2026-03-01T00:00:00.000Z',
+  }),
+  delete: vi.fn().mockResolvedValue(undefined),
+};
+
 const mockJwtService = {
   sign: vi.fn(() => 'jwt'),
   verifyAsync: vi.fn(),
@@ -143,6 +169,7 @@ describe('AuthController', () => {
         { provide: ClubService, useValue: mockClubService },
         { provide: TeamService, useValue: mockTeamService },
         { provide: LeagueService, useValue: mockLeagueService },
+        { provide: EventService, useValue: mockEventService },
         { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
@@ -526,6 +553,48 @@ describe('AuthController', () => {
 
       expect(result).toEqual({ success: true });
       expect(mockLeagueService.deleteGoal).toHaveBeenCalledWith('goal-1');
+    });
+  });
+
+  describe('createEvent', () => {
+    it('should create an event in the user org', async () => {
+      const result = await controller.createEvent(
+        { title: 'Training', date: '2026-03-10', hostedByName: 'My Club' } as any,
+        { id: 'user-1', role: 'ADMIN' },
+      );
+
+      expect(result.title).toBe('Training');
+      expect(mockEventService.create).toHaveBeenCalledWith(
+        'org-1',
+        { title: 'Training', date: '2026-03-10', hostedByName: 'My Club' },
+      );
+    });
+  });
+
+  describe('listEvents', () => {
+    it('should return events for user org', async () => {
+      const result = await controller.listEvents({ id: 'user-1', role: 'ADMIN' });
+
+      expect(result).toHaveLength(1);
+      expect(mockEventService.listByOrganisation).toHaveBeenCalledWith('org-1');
+    });
+  });
+
+  describe('updateEvent', () => {
+    it('should update an event', async () => {
+      const result = await controller.updateEvent('event-1', { title: 'Updated Training' } as any);
+
+      expect(result.title).toBe('Updated Training');
+      expect(mockEventService.update).toHaveBeenCalledWith('event-1', { title: 'Updated Training' });
+    });
+  });
+
+  describe('deleteEvent', () => {
+    it('should delete an event', async () => {
+      const result = await controller.deleteEvent('event-1');
+
+      expect(result).toEqual({ success: true });
+      expect(mockEventService.delete).toHaveBeenCalledWith('event-1');
     });
   });
 });

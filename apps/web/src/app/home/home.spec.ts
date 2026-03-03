@@ -76,6 +76,23 @@ const mockLeagueDetail = {
   topScorers: [{ userId: 'u1', name: 'John Doe', goals: 2 }],
 };
 
+const mockEvents = [
+  {
+    id: 'event-1', title: 'Training', date: '2099-12-01',
+    startTime: '18:00', endTime: '19:30', allDay: false,
+    primaryContact: 'Coach', secondaryContact: null, hostedByName: 'My Club',
+    location: 'Main Pitch', description: 'Weekly training',
+    organisationId: 'org-1', createdAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'event-2', title: 'Past Match', date: '2020-01-01',
+    startTime: null, endTime: null, allDay: true,
+    primaryContact: null, secondaryContact: null, hostedByName: 'Other Club',
+    location: null, description: null,
+    organisationId: 'org-1', createdAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
 function createAuthService(loggedIn: boolean) {
   return {
     isLoggedIn: signal(loggedIn),
@@ -84,6 +101,7 @@ function createAuthService(loggedIn: boolean) {
     listTeamUsers: vi.fn().mockResolvedValue(mockTeamMembers),
     listLeagues: vi.fn().mockResolvedValue(mockLeagues),
     getLeagueDetail: vi.fn().mockResolvedValue(mockLeagueDetail),
+    listEvents: vi.fn().mockResolvedValue(mockEvents),
   };
 }
 
@@ -335,5 +353,41 @@ describe('Home (logged in)', () => {
     card.click();
     fixture.detectChanges();
     expect(el.querySelector('.league-detail')).toBeNull();
+  });
+
+  it('should load and display events', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(authService.listEvents).toHaveBeenCalled();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.events-section')).toBeTruthy();
+    expect(el.querySelector('.events-heading')?.textContent).toContain('Events');
+  });
+
+  it('should show upcoming events by default', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const cards = el.querySelectorAll('.event-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('Training');
+  });
+
+  it('should switch to past events tab', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const pastBtn = el.querySelectorAll('.event-tab-btn')[1] as HTMLButtonElement;
+    pastBtn.click();
+    fixture.detectChanges();
+    const cards = el.querySelectorAll('.event-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('Past Match');
   });
 });

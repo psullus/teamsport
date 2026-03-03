@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
   AuthService, User, Role, ROLES, Club, Team, SPORT_TYPES,
   type League, type LeagueDetail, type Fixture, type StandingsRow, type TopScorer,
+  type Event,
 } from '../services/auth.service';
 
 @Component({
@@ -13,7 +14,7 @@ import {
   styleUrl: './admin-dashboard.css',
 })
 export class AdminDashboard implements OnInit {
-  activeTab = signal<'members' | 'clubs' | 'leagues'>('members');
+  activeTab = signal<'members' | 'clubs' | 'leagues' | 'events'>('members');
   inviteEmail = signal('');
   inviteSuccess = signal('');
   inviteError = signal('');
@@ -60,11 +61,34 @@ export class AdminDashboard implements OnInit {
   roundRobinConfirmRestart = signal(false);
   allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
+  events = signal<Event[]>([]);
+  eventTitle = signal('');
+  eventDate = signal('');
+  eventStartTime = signal('');
+  eventEndTime = signal('');
+  eventAllDay = signal(false);
+  eventPrimaryContact = signal('');
+  eventSecondaryContact = signal('');
+  eventHostedByName = signal('');
+  eventLocation = signal('');
+  eventDescription = signal('');
+  editingEventId = signal<string | null>(null);
+  editEventTitle = signal('');
+  editEventDate = signal('');
+  editEventStartTime = signal('');
+  editEventEndTime = signal('');
+  editEventAllDay = signal(false);
+  editEventPrimaryContact = signal('');
+  editEventSecondaryContact = signal('');
+  editEventHostedByName = signal('');
+  editEventLocation = signal('');
+  editEventDescription = signal('');
+
   roles: Role[] = [ROLES.ADMIN, ROLES.USER];
 
   constructor(private authService: AuthService) {}
 
-  setTab(tab: 'members' | 'clubs' | 'leagues') {
+  setTab(tab: 'members' | 'clubs' | 'leagues' | 'events') {
     this.activeTab.set(tab);
   }
 
@@ -73,6 +97,7 @@ export class AdminDashboard implements OnInit {
     this.loadInvites();
     this.loadClubs().then(() => this.loadAllTeams());
     this.loadLeagues();
+    this.loadEvents();
   }
 
   async loadUsers() {
@@ -486,5 +511,85 @@ export class AdminDashboard implements OnInit {
     await this.authService.deleteGoal(goalId);
     const league = this.selectedLeague();
     if (league) this.loadLeagueDetail(league.id);
+  }
+
+  async loadEvents() {
+    try {
+      this.events.set(await this.authService.listEvents());
+    } catch {
+      this.events.set([]);
+    }
+  }
+
+  async createEvent() {
+    const title = this.eventTitle();
+    const date = this.eventDate();
+    const hostedByName = this.eventHostedByName();
+    if (!title || !date || !hostedByName) return;
+    await this.authService.createEvent({
+      title,
+      date,
+      startTime: this.eventStartTime() || null,
+      endTime: this.eventEndTime() || null,
+      allDay: this.eventAllDay(),
+      primaryContact: this.eventPrimaryContact() || null,
+      secondaryContact: this.eventSecondaryContact() || null,
+      hostedByName,
+      location: this.eventLocation() || null,
+      description: this.eventDescription() || null,
+    });
+    this.eventTitle.set('');
+    this.eventDate.set('');
+    this.eventStartTime.set('');
+    this.eventEndTime.set('');
+    this.eventAllDay.set(false);
+    this.eventPrimaryContact.set('');
+    this.eventSecondaryContact.set('');
+    this.eventHostedByName.set('');
+    this.eventLocation.set('');
+    this.eventDescription.set('');
+    this.loadEvents();
+  }
+
+  startEditEvent(event: Event) {
+    this.editingEventId.set(event.id);
+    this.editEventTitle.set(event.title);
+    this.editEventDate.set(event.date);
+    this.editEventStartTime.set(event.startTime ?? '');
+    this.editEventEndTime.set(event.endTime ?? '');
+    this.editEventAllDay.set(event.allDay);
+    this.editEventPrimaryContact.set(event.primaryContact ?? '');
+    this.editEventSecondaryContact.set(event.secondaryContact ?? '');
+    this.editEventHostedByName.set(event.hostedByName);
+    this.editEventLocation.set(event.location ?? '');
+    this.editEventDescription.set(event.description ?? '');
+  }
+
+  cancelEditEvent() {
+    this.editingEventId.set(null);
+  }
+
+  async saveEvent() {
+    const id = this.editingEventId();
+    if (!id) return;
+    await this.authService.updateEvent(id, {
+      title: this.editEventTitle(),
+      date: this.editEventDate(),
+      startTime: this.editEventStartTime() || null,
+      endTime: this.editEventEndTime() || null,
+      allDay: this.editEventAllDay(),
+      primaryContact: this.editEventPrimaryContact() || null,
+      secondaryContact: this.editEventSecondaryContact() || null,
+      hostedByName: this.editEventHostedByName(),
+      location: this.editEventLocation() || null,
+      description: this.editEventDescription() || null,
+    });
+    this.editingEventId.set(null);
+    this.loadEvents();
+  }
+
+  async deleteEvent(eventId: string) {
+    await this.authService.deleteEvent(eventId);
+    this.loadEvents();
   }
 }
