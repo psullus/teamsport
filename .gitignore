@@ -46,6 +46,10 @@ apps/api/uploads/
 # Environment
 .env
 
+# SST
+.sst/
+sst-env.d.ts
+
 # System files
 .DS_Store
 Thumbs.db

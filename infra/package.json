@@ -1,0 +1,8 @@
+{
+  "name": "@teamsport/infra",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "sst": "^3.17.40"
+  }
+}
