@@ -320,6 +320,19 @@ export class AuthService {
     await firstValueFrom(this.http.delete(`/api/auth/events/${id}`));
   }
 
+  async resendVerification(): Promise<void> {
+    await firstValueFrom(
+      this.http.post('/api/auth/resend-verification', {}),
+    );
+  }
+
+  async refreshUser(): Promise<void> {
+    const user = await firstValueFrom(
+      this.http.get<User>('/api/auth/me'),
+    );
+    this.currentUser.set(user);
+  }
+
   private restoreSession(): void {
     this.http.get<User>('/api/auth/me').pipe(
       catchError(() => EMPTY),

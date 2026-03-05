@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService, toUserResponse } from './auth.service';
+import { EmailService } from './email.service';
 import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
@@ -50,6 +51,10 @@ const mockJwtService = {
   verifyAsync: vi.fn(),
 };
 
+const mockEmailService = {
+  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -69,6 +74,7 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(ClubMemberEntity), useValue: mockClubMemberRepo },
         { provide: getRepositoryToken(TeamEntity), useValue: mockTeamRepo },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 

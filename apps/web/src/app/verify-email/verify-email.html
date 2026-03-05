@@ -6,7 +6,7 @@
     } @else if (success()) {
       <h1>Email verified</h1>
       <p class="auth-subtitle">Your email has been successfully verified.</p>
-      <a class="btn btn-primary btn-full" routerLink="/">Continue</a>
+      <button class="btn btn-primary btn-full" (click)="goHome()">Continue</button>
     } @else {
       <h1>Verification failed</h1>
       <p class="auth-error">{{ error() }}</p>

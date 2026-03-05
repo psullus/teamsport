@@ -12,7 +12,10 @@ function flush(): Promise<void> {
 
 describe('VerifyEmail', () => {
   function setup(token: string | null) {
-    const authService = { verifyEmail: vi.fn() };
+    const authService = {
+      verifyEmail: vi.fn(),
+      refreshUser: vi.fn().mockResolvedValue(undefined),
+    };
     const route = {
       snapshot: {
         queryParamMap: {

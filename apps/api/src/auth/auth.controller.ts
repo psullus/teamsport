@@ -14,9 +14,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { AuthService } from './auth.service';
 import { UserService } from './user.service';
 import { OrganisationService } from './organisation.service';
@@ -47,13 +44,6 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ROLES } from '@teamsport/shared';
 import { setTokenCookie, clearTokenCookie } from './cookie.utils';
-
-const avatarStorage = diskStorage({
-  destination: 'uploads/avatars',
-  filename: (_req, file, cb) => {
-    cb(null, `${uuidv4()}${extname(file.originalname)}`);
-  },
-});
 
 @Controller('auth')
 export class AuthController {
@@ -145,6 +135,13 @@ export class AuthController {
     return { success: true };
   }
 
+  @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  async resendVerification(@CurrentUser() currentUser: { id: string; role: string }) {
+    await this.authService.resendVerification(currentUser.id);
+    return { success: true };
+  }
+
   @Post('invites')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)
@@ -217,7 +214,7 @@ export class AuthController {
 
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('avatar', { storage: avatarStorage }))
+  @UseInterceptors(FileInterceptor('avatar'))
   async updateProfile(
     @CurrentUser() currentUser: { id: string; role: string },
     @Body() dto: UpdateProfileDto,

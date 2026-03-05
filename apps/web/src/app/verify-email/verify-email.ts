@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -15,6 +15,7 @@ export class VerifyEmail implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private authService: AuthService,
   ) {}
 
@@ -27,11 +28,16 @@ export class VerifyEmail implements OnInit {
     }
     try {
       await this.authService.verifyEmail(token);
+      await this.authService.refreshUser();
       this.success.set(true);
     } catch {
       this.error.set('Invalid or expired verification token.');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  goHome() {
+    this.router.navigateByUrl('/');
   }
 }
