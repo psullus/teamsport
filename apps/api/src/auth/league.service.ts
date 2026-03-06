@@ -27,6 +27,7 @@ function toLeagueResponse(league: LeagueEntity): League {
     organisationId: (league.organisation as any)?.id ?? '',
     clubId: (league.club as any)?.id ?? null,
     started: league.started ?? false,
+    archived: league.archived ?? false,
   };
 }
 
@@ -98,12 +99,29 @@ export class LeagueService {
     return toLeagueResponse(saved);
   }
 
-  async listByOrganisation(organisationId: string): Promise<League[]> {
+  async listByOrganisation(
+    organisationId: string,
+    includeArchived = false,
+  ): Promise<League[]> {
     const leagues = await this.leagueRepo.find({
       where: { organisation: { id: organisationId } },
       relations: ['organisation', 'club'],
     });
-    return leagues.map(toLeagueResponse);
+    if (includeArchived) {
+      return leagues.map(toLeagueResponse);
+    }
+    return leagues.filter((l) => !l.archived).map(toLeagueResponse);
+  }
+
+  async archiveLeague(leagueId: string, archived: boolean): Promise<League> {
+    const league = await this.leagueRepo.findOne({
+      where: { id: leagueId },
+      relations: ['organisation', 'club'],
+    });
+    if (!league) throw new NotFoundException('League not found');
+    league.archived = archived;
+    await this.leagueRepo.save(league);
+    return toLeagueResponse(league);
   }
 
   async getDetail(leagueId: string): Promise<LeagueDetail> {

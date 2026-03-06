@@ -234,8 +234,21 @@ export class AuthService {
     return user;
   }
 
-  async listLeagues(): Promise<League[]> {
+  async listLeagues(includeArchived?: boolean): Promise<League[]> {
+    if (includeArchived) {
+      return firstValueFrom(
+        this.http.get<League[]>('/api/auth/leagues', {
+          params: { includeArchived: 'true' },
+        }),
+      );
+    }
     return firstValueFrom(this.http.get<League[]>('/api/auth/leagues'));
+  }
+
+  async archiveLeague(id: string, archived: boolean): Promise<League> {
+    return firstValueFrom(
+      this.http.patch<League>(`/api/auth/leagues/${id}/archive`, { archived }),
+    );
   }
 
   async getLeagueDetail(id: string): Promise<LeagueDetail> {

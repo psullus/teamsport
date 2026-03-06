@@ -307,10 +307,15 @@ export class AdminDashboard implements OnInit {
 
   async loadLeagues() {
     try {
-      this.leagues.set(await this.authService.listLeagues());
+      this.leagues.set(await this.authService.listLeagues(true));
     } catch {
       this.leagues.set([]);
     }
+  }
+
+  async archiveLeague(leagueId: string, archived: boolean) {
+    await this.authService.archiveLeague(leagueId, archived);
+    this.loadLeagues();
   }
 
   async createLeague() {

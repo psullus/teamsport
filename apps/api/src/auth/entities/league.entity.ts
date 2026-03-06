@@ -32,6 +32,9 @@ export class LeagueEntity {
   @Column({ default: false })
   started!: boolean;
 
+  @Column({ default: false })
+  archived!: boolean;
+
   @ManyToMany(() => TeamEntity)
   @JoinTable({ name: 'league_participants' })
   participants!: Relation<TeamEntity[]>;

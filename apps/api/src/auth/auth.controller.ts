@@ -345,9 +345,15 @@ export class AuthController {
 
   @Get('leagues')
   @UseGuards(JwtAuthGuard)
-  async listLeagues(@CurrentUser() currentUser: { id: string; role: string }) {
+  async listLeagues(
+    @CurrentUser() currentUser: { id: string; role: string },
+    @Query('includeArchived') includeArchived?: string,
+  ) {
     const user = await this.authService.getMe(currentUser.id);
-    return this.leagueService.listByOrganisation(user.organisationId);
+    return this.leagueService.listByOrganisation(
+      user.organisationId,
+      includeArchived === 'true',
+    );
   }
 
   @Get('leagues/:id')
@@ -365,6 +371,16 @@ export class AuthController {
   ) {
     const user = await this.authService.getMe(currentUser.id);
     return this.leagueService.create(dto.name, dto.type, user.organisationId, dto.clubId);
+  }
+
+  @Patch('leagues/:id/archive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async archiveLeague(
+    @Param('id') id: string,
+    @Body() body: { archived: boolean },
+  ) {
+    return this.leagueService.archiveLeague(id, body.archived);
   }
 
   @Delete('leagues/:id')

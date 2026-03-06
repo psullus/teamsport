@@ -29,6 +29,7 @@ describe('AdminDashboard', () => {
     createLeague: ReturnType<typeof vi.fn>;
     getLeagueDetail: ReturnType<typeof vi.fn>;
     deleteLeague: ReturnType<typeof vi.fn>;
+    archiveLeague: ReturnType<typeof vi.fn>;
     generateRoundRobin: ReturnType<typeof vi.fn>;
     createFixture: ReturnType<typeof vi.fn>;
     updateFixture: ReturnType<typeof vi.fn>;
@@ -75,11 +76,12 @@ describe('AdminDashboard', () => {
       deleteTeam: vi.fn().mockResolvedValue(undefined),
       changeUserRole: vi.fn().mockResolvedValue({ id: '1', role: 'USER' }),
       listLeagues: vi.fn().mockResolvedValue([
-        { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false },
+        { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false },
       ]),
+      archiveLeague: vi.fn().mockResolvedValue({ id: 'league-1', archived: true }),
       createLeague: vi.fn().mockResolvedValue({ id: 'league-2', name: 'Autumn League' }),
       getLeagueDetail: vi.fn().mockResolvedValue({
-        league: { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false },
+        league: { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false },
         fixtures: [
           {
             id: 'fix-1', leagueId: 'league-1', homeId: 'club-1', awayId: 'club-2',
@@ -356,7 +358,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     const component = fixture.componentInstance;
     await component.selectLeague({
-      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false,
+      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false,
     });
     expect(component.selectedLeague()?.id).toBe('league-1');
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
@@ -373,13 +375,40 @@ describe('AdminDashboard', () => {
     expect(component.selectedLeague()).toBeNull();
   });
 
+  it('should archive a league', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.archiveLeague('league-1', true);
+    expect(authService.archiveLeague).toHaveBeenCalledWith('league-1', true);
+    expect(authService.listLeagues).toHaveBeenCalled();
+  });
+
+  it('should unarchive a league', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.archiveLeague('league-1', false);
+    expect(authService.archiveLeague).toHaveBeenCalledWith('league-1', false);
+    expect(authService.listLeagues).toHaveBeenCalled();
+  });
+
+  it('should load leagues with includeArchived=true', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(authService.listLeagues).toHaveBeenCalledWith(true);
+  });
+
   it('should generate round robin fixtures', async () => {
     const fixture = TestBed.createComponent(AdminDashboard);
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
     component.selectedLeague.set({
-      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false,
+      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false,
     });
     await component.generateRoundRobin();
     expect(authService.generateRoundRobin).toHaveBeenCalledWith('league-1', {

@@ -467,7 +467,13 @@ describe('AuthController', () => {
       const result = await controller.listLeagues({ id: 'user-1', role: 'ADMIN' });
 
       expect(result).toHaveLength(1);
-      expect(mockLeagueService.listByOrganisation).toHaveBeenCalledWith('org-1');
+      expect(mockLeagueService.listByOrganisation).toHaveBeenCalledWith('org-1', false);
+    });
+
+    it('should pass includeArchived=true when query param is set', async () => {
+      await controller.listLeagues({ id: 'user-1', role: 'ADMIN' }, 'true');
+
+      expect(mockLeagueService.listByOrganisation).toHaveBeenCalledWith('org-1', true);
     });
   });
 

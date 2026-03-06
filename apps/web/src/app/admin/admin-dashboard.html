@@ -309,12 +309,18 @@
     } @else {
       <ul class="invite-list">
         @for (league of leagues(); track league.id) {
-          <li class="league-item">
+          <li class="league-item" [class.league-item--archived]="league.archived">
             <button
               class="btn-link"
               [class.active]="selectedLeague()?.id === league.id"
               (click)="selectLeague(league)"
             >{{ league.name }}</button>
+            @if (league.archived) {
+              <span class="badge">Archived</span>
+              <button class="btn-link" (click)="archiveLeague(league.id, false)">Unarchive</button>
+            } @else {
+              <button class="btn-link" (click)="archiveLeague(league.id, true)">Archive</button>
+            }
             <button class="btn-danger" (click)="deleteLeague(league.id)">Delete</button>
           </li>
         }
