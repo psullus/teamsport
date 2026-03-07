@@ -13,6 +13,8 @@ import {
   styleUrl: './home.css',
 })
 export class Home {
+  activeView = signal<'clubs' | 'teams' | 'leagues' | 'events'>('clubs');
+
   clubs = signal<ClubWithTeams[]>([]);
   selectedClub = signal<ClubWithTeams | null>(null);
   selectedTeam = signal<Team | null>(null);
@@ -42,6 +44,17 @@ export class Home {
   });
 
   selectedTeams = computed<Team[]>(() => this.selectedClub()?.teams ?? []);
+
+  allMyTeams = computed(() => {
+    const clubs = this.clubs();
+    return clubs.flatMap((club) =>
+      club.teams.map((team) => ({ ...team, clubName: club.name }))
+    );
+  });
+
+  setView(view: 'clubs' | 'teams' | 'leagues' | 'events'): void {
+    this.activeView.set(view);
+  }
 
   constructor(public auth: AuthService) {
     effect(() => {

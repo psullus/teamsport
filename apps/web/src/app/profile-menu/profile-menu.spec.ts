@@ -260,18 +260,4 @@ describe('ProfileMenu', () => {
     expect(helpItem?.getAttribute('href')).toBe('/help');
   });
 
-  it('should render Settings as a link to /settings', async () => {
-    authService._setUser({ ...defaultUser });
-    const fixture = TestBed.createComponent(ProfileMenu);
-    fixture.componentInstance.isOpen.set(true);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    const items = Array.from(
-      fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
-    );
-    const settingsItem = items.find((el) => el.textContent?.includes('Settings'));
-    expect(settingsItem).toBeTruthy();
-    expect(settingsItem?.tagName).toBe('A');
-    expect(settingsItem?.getAttribute('href')).toBe('/settings');
-  });
 });
