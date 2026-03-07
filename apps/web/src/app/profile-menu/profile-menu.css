@@ -100,7 +100,9 @@
 }
 
 .dropdown-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
@@ -111,6 +113,7 @@
   text-align: left;
   cursor: pointer;
   transition: background-color 0.1s ease;
+  text-decoration: none;
 }
 
 .dropdown-item:hover {
@@ -119,5 +122,5 @@
 
 .menu-icon {
   font-size: 1.125rem;
-  vertical-align: text-bottom;
+  color: var(--color-text-secondary);
 }

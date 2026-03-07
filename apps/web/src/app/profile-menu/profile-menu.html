@@ -17,18 +17,18 @@
           <span class="dropdown-role">{{ user()?.role }}</span>
         </div>
         <div class="dropdown-divider"></div>
-        <a class="dropdown-item" routerLink="/" (click)="isOpen.set(false)">Home</a>
+        <a class="dropdown-item" routerLink="/" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">home</span> Home</a>
         @if (isControl()) {
-          <a class="dropdown-item" routerLink="/control" (click)="isOpen.set(false)">Control panel</a>
+          <a class="dropdown-item" routerLink="/control" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">shield_person</span> Control panel</a>
         }
         @if (isAdminOrControl()) {
           <a class="dropdown-item" routerLink="/admin" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">settings</span> Account settings</a>
         }
-        <a class="dropdown-item" routerLink="/profile" (click)="isOpen.set(false)">View profile</a>
-        <a class="dropdown-item" routerLink="/settings" (click)="isOpen.set(false)">Settings</a>
-        <a class="dropdown-item" routerLink="/help" (click)="isOpen.set(false)">Help</a>
+        <a class="dropdown-item" routerLink="/profile" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">person</span> View profile</a>
+        <a class="dropdown-item" routerLink="/settings" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">tune</span> Settings</a>
+        <a class="dropdown-item" routerLink="/help" (click)="isOpen.set(false)"><span class="material-symbols-outlined menu-icon">help</span> Help</a>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item" (click)="logout()">Log out</button>
+        <button class="dropdown-item" (click)="logout()"><span class="material-symbols-outlined menu-icon">logout</span> Log out</button>
       </div>
     }
   </div>
