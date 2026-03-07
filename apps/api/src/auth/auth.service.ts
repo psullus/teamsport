@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,7 +16,9 @@ import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
 import { ClubEntity } from './entities/club.entity';
+import { ClubMemberEntity } from './entities/club-member.entity';
 import { TeamEntity } from './entities/team.entity';
+import { EmailService } from './email.service';
 
 const SALT_ROUNDS = 10;
 
@@ -30,7 +33,11 @@ export function toUserResponse(user: UserEntity): User {
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,
     phone: user.phone ?? null,
-    avatarUrl: user.avatarPath ? `/api/uploads/${user.avatarPath}` : null,
+    avatarUrl: user.avatarPath
+      ? process.env.BUCKET_NAME
+        ? `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${user.avatarPath}`
+        : `/api/uploads/${user.avatarPath}`
+      : null,
   };
 }
 
@@ -45,18 +52,23 @@ export class AuthService {
     private emailTokenRepo: Repository<EmailVerificationTokenEntity>,
     @InjectRepository(ClubEntity)
     private clubRepo: Repository<ClubEntity>,
+    @InjectRepository(ClubMemberEntity)
+    private clubMemberRepo: Repository<ClubMemberEntity>,
     @InjectRepository(TeamEntity)
     private teamRepo: Repository<TeamEntity>,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async signup(
     organisationName: string,
-    email: string,
+    rawEmail: string,
     password: string,
     clubName: string,
+    clubType: string,
     teamName: string,
   ): Promise<{ user: User; token: string }> {
+    const email = rawEmail.toLowerCase();
     const existing = await this.userRepo.findOne({ where: { email } });
     if (existing) {
       throw new ConflictException('Email already registered');
@@ -65,7 +77,7 @@ export class AuthService {
     const org = this.orgRepo.create({ name: organisationName });
     await this.orgRepo.save(org);
 
-    const club = this.clubRepo.create({ name: clubName, organisation: org });
+    const club = this.clubRepo.create({ name: clubName, type: clubType, organisation: org });
     await this.clubRepo.save(club);
 
     const team = this.teamRepo.create({ name: teamName, club });
@@ -80,8 +92,8 @@ export class AuthService {
     });
     await this.userRepo.save(user);
 
-    club.members = [user];
-    await this.clubRepo.save(club);
+    const membership = this.clubMemberRepo.create({ user, club });
+    await this.clubMemberRepo.save(membership);
     team.members = [user];
     await this.teamRepo.save(team);
 
@@ -91,7 +103,8 @@ export class AuthService {
     return { user: toUserResponse(user), token: jwt };
   }
 
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+  async login(rawEmail: string, password: string): Promise<{ user: User; token: string }> {
+    const email = rawEmail.toLowerCase();
     const user = await this.userRepo.findOne({
       where: { email },
       relations: ['organisation'],
@@ -136,10 +149,31 @@ export class AuthService {
     return this.jwtService.sign({ sub: user.id, role: user.role });
   }
 
-  private async createEmailVerificationToken(user: UserEntity): Promise<void> {
+  async createEmailVerificationToken(user: UserEntity): Promise<void> {
     const token = uuidv4();
     const emailToken = this.emailTokenRepo.create({ token, user });
     await this.emailTokenRepo.save(emailToken);
-    console.log(`[Email Verification] http://localhost:4200/verify-email?token=${token}`);
+    await this.emailService.sendVerificationEmail(user.email, token);
+  }
+
+  async resendVerification(userId: string): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    if (user.emailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    const existing = await this.emailTokenRepo.findOne({ where: { user: { id: userId } } });
+    if (existing) {
+      const age = Date.now() - existing.createdAt.getTime();
+      if (age < 60_000) {
+        throw new HttpException('Please wait before requesting another email', 429);
+      }
+      await this.emailTokenRepo.remove(existing);
+    }
+
+    await this.createEmailVerificationToken(user);
   }
 }

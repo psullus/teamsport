@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { AuthService, SPORT_TYPES } from '../services/auth.service';
 
 @Component({
   selector: 'app-signup',
@@ -12,11 +12,13 @@ import { AuthService } from '../services/auth.service';
 export class Signup implements OnInit {
   organisationName = '';
   clubName = '';
+  clubType = 'Touch';
   teamName = '';
   email = '';
   password = '';
   error = signal('');
   inviteToken: string | null = null;
+  sportTypes = SPORT_TYPES;
 
   constructor(
     private authService: AuthService,
@@ -34,7 +36,8 @@ export class Signup implements OnInit {
         await this.authService.signupWithInvite(this.email, this.password, this.inviteToken);
       } else {
         await this.authService.signup(
-          this.organisationName, this.email, this.password, this.clubName, this.teamName,
+          this.organisationName, this.email, this.password,
+          this.clubName, this.clubType, this.teamName,
         );
       }
     } catch (err: any) {

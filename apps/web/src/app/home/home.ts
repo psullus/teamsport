@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import {
   AuthService,
   type ClubWithTeams, type Team, type User,
-  type League, type LeagueDetail,
+  type League, type LeagueDetail, type Event,
 } from '../services/auth.service';
 
 @Component({
@@ -13,6 +13,8 @@ import {
   styleUrl: './home.css',
 })
 export class Home {
+  activeView = signal<'clubs' | 'teams' | 'leagues' | 'events'>('clubs');
+
   clubs = signal<ClubWithTeams[]>([]);
   selectedClub = signal<ClubWithTeams | null>(null);
   selectedTeam = signal<Team | null>(null);
@@ -24,13 +26,42 @@ export class Home {
   selectedLeague = signal<League | null>(null);
   leagueDetail = signal<LeagueDetail | null>(null);
 
+  events = signal<Event[]>([]);
+  eventTab = signal<'upcoming' | 'past'>('upcoming');
+
+  upcomingEvents = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.events()
+      .filter((e) => e.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  });
+
+  pastEvents = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.events()
+      .filter((e) => e.date < today)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  });
+
   selectedTeams = computed<Team[]>(() => this.selectedClub()?.teams ?? []);
+
+  allMyTeams = computed(() => {
+    const clubs = this.clubs();
+    return clubs.flatMap((club) =>
+      club.teams.map((team) => ({ ...team, clubName: club.name }))
+    );
+  });
+
+  setView(view: 'clubs' | 'teams' | 'leagues' | 'events'): void {
+    this.activeView.set(view);
+  }
 
   constructor(public auth: AuthService) {
     effect(() => {
       if (this.auth.isLoggedIn()) {
         this.loadClubs();
         this.loadLeagues();
+        this.loadEvents();
       }
     });
   }
@@ -76,6 +107,14 @@ export class Home {
       this.leagues.set(await this.auth.listLeagues());
     } catch {
       this.leagues.set([]);
+    }
+  }
+
+  async loadEvents(): Promise<void> {
+    try {
+      this.events.set(await this.auth.listEvents());
+    } catch {
+      this.events.set([]);
     }
   }
 

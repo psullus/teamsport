@@ -2,17 +2,19 @@ import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { EMPTY, firstValueFrom, catchError } from 'rxjs';
-import { ROLES } from '@teamsport/shared';
+import { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
 import type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
-  League, LeagueDetail, Fixture, Goal,
+  League, LeagueDetail, Fixture, Goal, SportType, ClubMembership,
+  Event,
 } from '@teamsport/shared';
 
-export { ROLES } from '@teamsport/shared';
+export { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
 export type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
   League, LeagueDetail, LeagueType, FixtureStatus, Fixture, Goal,
-  ScorerFixture, StandingsRow, TopScorer,
+  ScorerFixture, StandingsRow, TopScorer, SportType, ClubMembership,
+  Event,
 } from '@teamsport/shared';
 
 interface AuthResponse {
@@ -44,11 +46,12 @@ export class AuthService {
     email: string,
     password: string,
     clubName: string,
+    clubType: string,
     teamName: string,
   ): Promise<void> {
     const res = await firstValueFrom(
       this.http.post<AuthResponse>('/api/auth/signup', {
-        organisationName, email, password, clubName, teamName,
+        organisationName, email, password, clubName, clubType, teamName,
       }),
     );
     this.currentUser.set(res.user);
@@ -149,8 +152,8 @@ export class AuthService {
     return firstValueFrom(this.http.get<Club[]>('/api/auth/clubs'));
   }
 
-  async createClub(name: string): Promise<Club> {
-    return firstValueFrom(this.http.post<Club>('/api/auth/clubs', { name }));
+  async createClub(name: string, type: string): Promise<Club> {
+    return firstValueFrom(this.http.post<Club>('/api/auth/clubs', { name, type }));
   }
 
   async listClubUsers(clubId: string): Promise<User[]> {
@@ -165,8 +168,8 @@ export class AuthService {
     await firstValueFrom(this.http.delete(`/api/auth/clubs/${clubId}/users/${userId}`));
   }
 
-  async renameClub(clubId: string, name: string): Promise<Club> {
-    return firstValueFrom(this.http.patch<Club>(`/api/auth/clubs/${clubId}`, { name }));
+  async updateClub(clubId: string, name: string, type?: string): Promise<Club> {
+    return firstValueFrom(this.http.patch<Club>(`/api/auth/clubs/${clubId}`, { name, type }));
   }
 
   async deleteClub(clubId: string): Promise<void> {
@@ -205,6 +208,16 @@ export class AuthService {
     return firstValueFrom(this.http.get<ClubWithTeams[]>('/api/auth/me/clubs'));
   }
 
+  async listMyMemberships(): Promise<ClubMembership[]> {
+    return firstValueFrom(this.http.get<ClubMembership[]>('/api/auth/me/memberships'));
+  }
+
+  async updateMyPosition(clubId: string, position: string | null): Promise<void> {
+    await firstValueFrom(
+      this.http.patch(`/api/auth/me/memberships/${clubId}/position`, { position }),
+    );
+  }
+
   async updateProfile(formData: FormData): Promise<User> {
     const user = await firstValueFrom(
       this.http.patch<User>('/api/auth/profile', formData),
@@ -221,8 +234,21 @@ export class AuthService {
     return user;
   }
 
-  async listLeagues(): Promise<League[]> {
+  async listLeagues(includeArchived?: boolean): Promise<League[]> {
+    if (includeArchived) {
+      return firstValueFrom(
+        this.http.get<League[]>('/api/auth/leagues', {
+          params: { includeArchived: 'true' },
+        }),
+      );
+    }
     return firstValueFrom(this.http.get<League[]>('/api/auth/leagues'));
+  }
+
+  async archiveLeague(id: string, archived: boolean): Promise<League> {
+    return firstValueFrom(
+      this.http.patch<League>(`/api/auth/leagues/${id}/archive`, { archived }),
+    );
   }
 
   async getLeagueDetail(id: string): Promise<LeagueDetail> {
@@ -289,6 +315,35 @@ export class AuthService {
 
   async deleteGoal(goalId: string): Promise<void> {
     await firstValueFrom(this.http.delete(`/api/auth/goals/${goalId}`));
+  }
+
+  async listEvents(): Promise<Event[]> {
+    return firstValueFrom(this.http.get<Event[]>('/api/auth/events'));
+  }
+
+  async createEvent(data: Omit<Event, 'id' | 'createdAt' | 'organisationId'>): Promise<Event> {
+    return firstValueFrom(this.http.post<Event>('/api/auth/events', data));
+  }
+
+  async updateEvent(id: string, data: Partial<Omit<Event, 'id' | 'createdAt' | 'organisationId'>>): Promise<Event> {
+    return firstValueFrom(this.http.patch<Event>(`/api/auth/events/${id}`, data));
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`/api/auth/events/${id}`));
+  }
+
+  async resendVerification(): Promise<void> {
+    await firstValueFrom(
+      this.http.post('/api/auth/resend-verification', {}),
+    );
+  }
+
+  async refreshUser(): Promise<void> {
+    const user = await firstValueFrom(
+      this.http.get<User>('/api/auth/me'),
+    );
+    this.currentUser.set(user);
   }
 
   private restoreSession(): void {

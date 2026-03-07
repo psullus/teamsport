@@ -5,13 +5,11 @@ import {
   CreateDateColumn,
   ManyToOne,
   OneToMany,
-  ManyToMany,
-  JoinTable,
   Relation,
 } from 'typeorm';
 import { OrganisationEntity } from './organisation.entity';
 import type { TeamEntity } from './team.entity';
-import type { UserEntity } from './user.entity';
+import type { ClubMemberEntity } from './club-member.entity';
 
 @Entity('clubs')
 export class ClubEntity {
@@ -21,15 +19,17 @@ export class ClubEntity {
   @Column()
   name!: string;
 
+  @Column({ type: 'varchar', default: 'Touch' })
+  type!: string;
+
   @ManyToOne(() => OrganisationEntity, (org) => org.clubs, { onDelete: 'CASCADE' })
   organisation!: OrganisationEntity;
 
   @OneToMany('TeamEntity', 'club')
   teams!: Relation<TeamEntity[]>;
 
-  @ManyToMany('UserEntity', 'clubs')
-  @JoinTable({ name: 'club_members' })
-  members!: Relation<UserEntity[]>;
+  @OneToMany('ClubMemberEntity', 'club')
+  memberships!: Relation<ClubMemberEntity[]>;
 
   @CreateDateColumn()
   createdAt!: Date;

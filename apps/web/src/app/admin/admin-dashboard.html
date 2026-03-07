@@ -15,9 +15,19 @@
       >Clubs</button>
       <button
         class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'teams'"
+        (click)="setTab('teams')"
+      >Teams</button>
+      <button
+        class="sidebar-btn"
         [class.sidebar-btn--active]="activeTab() === 'leagues'"
         (click)="setTab('leagues')"
       >Leagues</button>
+      <button
+        class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'events'"
+        (click)="setTab('events')"
+      >Events</button>
     </nav>
 
     <main class="dashboard-main">
@@ -104,6 +114,15 @@
         placeholder="New club name"
         required
       />
+      <select
+        [ngModel]="clubType()"
+        (ngModelChange)="clubType.set($event)"
+        name="clubType"
+      >
+        @for (sport of sportTypes; track sport) {
+          <option [value]="sport">{{ sport }}</option>
+        }
+      </select>
       <button type="submit" class="btn btn-primary">Create club</button>
     </form>
     @if (clubs().length === 0) {
@@ -113,7 +132,7 @@
         @for (club of clubs(); track club.id) {
           <li class="list-item-row">
             @if (editingClubId() === club.id) {
-              <form class="inline-edit-form" (ngSubmit)="saveClubName()">
+              <form class="inline-edit-form" (ngSubmit)="saveClub()">
                 <input
                   type="text"
                   [ngModel]="editClubName()"
@@ -121,6 +140,15 @@
                   name="editClubName"
                   required
                 />
+                <select
+                  [ngModel]="editClubType()"
+                  (ngModelChange)="editClubType.set($event)"
+                  name="editClubType"
+                >
+                  @for (sport of sportTypes; track sport) {
+                    <option [value]="sport">{{ sport }}</option>
+                  }
+                </select>
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
                 <button type="button" class="btn-link" (click)="cancelEditClub()">Cancel</button>
               </form>
@@ -130,6 +158,7 @@
                 [class.active]="selectedClub()?.id === club.id"
                 (click)="selectClub(club)"
               >{{ club.name }}</button>
+              <span class="sport-type-badge">{{ club.type }}</span>
               <span class="list-item-actions">
                 <button class="btn-link" (click)="startEditClub(club)">Edit</button>
                 <button class="btn-danger" (click)="deleteClub(club.id)">Delete</button>
@@ -266,6 +295,108 @@
   }
   }
 
+  @if (activeTab() === 'teams') {
+  <section class="dashboard-section">
+    <h2>Teams</h2>
+    <form class="invite-form" (ngSubmit)="createTeamFromTab()">
+      <select
+        [ngModel]="teamClubId()"
+        (ngModelChange)="teamClubId.set($event)"
+        name="teamClubId"
+      >
+        <option value="">Select a club…</option>
+        @for (club of clubs(); track club.id) {
+          <option [value]="club.id">{{ club.name }}</option>
+        }
+      </select>
+      <input
+        type="text"
+        [ngModel]="teamName()"
+        (ngModelChange)="teamName.set($event)"
+        name="teamName"
+        placeholder="New team name"
+        required
+      />
+      <button type="submit" class="btn btn-primary">Create team</button>
+    </form>
+    @if (teamError()) {
+      <p class="error-msg">{{ teamError() }}</p>
+    }
+    @if (allTeams().length === 0) {
+      <p class="empty-state">No teams yet.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (team of allTeams(); track team.id) {
+          <li class="list-item-row">
+            @if (editingTeamId() === team.id) {
+              <form class="inline-edit-form" (ngSubmit)="saveTeamName()">
+                <input
+                  type="text"
+                  [ngModel]="editTeamName()"
+                  (ngModelChange)="editTeamName.set($event)"
+                  name="editTeamName"
+                  required
+                />
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="button" class="btn-link" (click)="cancelEditTeam()">Cancel</button>
+              </form>
+            } @else {
+              <button
+                class="btn-link"
+                [class.active]="selectedTeam()?.id === team.id"
+                (click)="selectTeam(team)"
+              >{{ team.name }}</button>
+              <span class="sport-type-badge">{{ clubNameForTeam(team.clubId) }}</span>
+              <span class="list-item-actions">
+                <button class="btn-link" (click)="startEditTeam(team)">Edit</button>
+                <button class="btn-danger" (click)="deleteTeam(team.id)">Delete</button>
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (selectedTeam()) {
+    <section class="dashboard-section">
+      <h2>{{ selectedTeam()!.name }} — Members</h2>
+      <form class="invite-form" (ngSubmit)="addUserToTeam()">
+        <select
+          [ngModel]="addTeamUserId()"
+          (ngModelChange)="addTeamUserId.set($event)"
+          name="addTeamUserId"
+        >
+          <option value="">Select a member…</option>
+          @for (user of users(); track user.id) {
+            <option [value]="user.id">{{ user.email }}</option>
+          }
+        </select>
+        <button type="submit" class="btn btn-primary">Add to team</button>
+      </form>
+      @if (teamMembers().length === 0) {
+        <p class="empty-state">No members in this team.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr><th>Email</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (member of teamMembers(); track member.id) {
+              <tr>
+                <td>{{ member.email }}</td>
+                <td>
+                  <button class="btn-danger" (click)="removeUserFromTeam(member.id)">Remove</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+  }
+
   @if (activeTab() === 'leagues') {
   <section class="dashboard-section">
     <h2>Leagues</h2>
@@ -285,12 +416,18 @@
     } @else {
       <ul class="invite-list">
         @for (league of leagues(); track league.id) {
-          <li class="league-item">
+          <li class="league-item" [class.league-item--archived]="league.archived">
             <button
               class="btn-link"
               [class.active]="selectedLeague()?.id === league.id"
               (click)="selectLeague(league)"
             >{{ league.name }}</button>
+            @if (league.archived) {
+              <span class="badge">Archived</span>
+              <button class="btn-link" (click)="archiveLeague(league.id, false)">Unarchive</button>
+            } @else {
+              <button class="btn-link" (click)="archiveLeague(league.id, true)">Archive</button>
+            }
             <button class="btn-danger" (click)="deleteLeague(league.id)">Delete</button>
           </li>
         }
@@ -683,6 +820,230 @@
     </section>
     }
   }
+  }
+
+  @if (activeTab() === 'events') {
+  <section class="dashboard-section">
+    <h2>Create Event</h2>
+    <form class="event-form" (ngSubmit)="createEvent()">
+      <div class="event-form-row">
+        <input
+          type="text"
+          [ngModel]="eventTitle()"
+          (ngModelChange)="eventTitle.set($event)"
+          name="eventTitle"
+          placeholder="Event title"
+          required
+        />
+        <input
+          type="date"
+          [ngModel]="eventDate()"
+          (ngModelChange)="eventDate.set($event)"
+          name="eventDate"
+          required
+        />
+      </div>
+      <div class="event-form-row">
+        <label class="event-checkbox">
+          <input
+            type="checkbox"
+            [ngModel]="eventAllDay()"
+            (ngModelChange)="eventAllDay.set($event)"
+            name="eventAllDay"
+          />
+          All day
+        </label>
+        @if (!eventAllDay()) {
+          <input
+            type="time"
+            [ngModel]="eventStartTime()"
+            (ngModelChange)="eventStartTime.set($event)"
+            name="eventStartTime"
+            placeholder="Start time"
+          />
+          <input
+            type="time"
+            [ngModel]="eventEndTime()"
+            (ngModelChange)="eventEndTime.set($event)"
+            name="eventEndTime"
+            placeholder="End time"
+          />
+        }
+      </div>
+      <div class="event-form-row">
+        <input
+          type="text"
+          [ngModel]="eventHostedByName()"
+          (ngModelChange)="eventHostedByName.set($event)"
+          name="eventHostedByName"
+          placeholder="Hosted by"
+          required
+        />
+        <input
+          type="text"
+          [ngModel]="eventLocation()"
+          (ngModelChange)="eventLocation.set($event)"
+          name="eventLocation"
+          placeholder="Location"
+        />
+      </div>
+      <div class="event-form-row">
+        <input
+          type="text"
+          [ngModel]="eventPrimaryContact()"
+          (ngModelChange)="eventPrimaryContact.set($event)"
+          name="eventPrimaryContact"
+          placeholder="Primary contact"
+        />
+        <input
+          type="text"
+          [ngModel]="eventSecondaryContact()"
+          (ngModelChange)="eventSecondaryContact.set($event)"
+          name="eventSecondaryContact"
+          placeholder="Secondary contact"
+        />
+      </div>
+      <textarea
+        [ngModel]="eventDescription()"
+        (ngModelChange)="eventDescription.set($event)"
+        name="eventDescription"
+        placeholder="Description"
+        rows="3"
+      ></textarea>
+      <button type="submit" class="btn btn-primary">Create event</button>
+    </form>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Events</h2>
+    @if (events().length === 0) {
+      <p class="empty-state">No events yet.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (event of events(); track event.id) {
+          <li class="event-list-item">
+            @if (editingEventId() === event.id) {
+              <form class="event-form" (ngSubmit)="saveEvent()">
+                <div class="event-form-row">
+                  <input
+                    type="text"
+                    [ngModel]="editEventTitle()"
+                    (ngModelChange)="editEventTitle.set($event)"
+                    name="editEventTitle"
+                    required
+                  />
+                  <input
+                    type="date"
+                    [ngModel]="editEventDate()"
+                    (ngModelChange)="editEventDate.set($event)"
+                    name="editEventDate"
+                    required
+                  />
+                </div>
+                <div class="event-form-row">
+                  <label class="event-checkbox">
+                    <input
+                      type="checkbox"
+                      [ngModel]="editEventAllDay()"
+                      (ngModelChange)="editEventAllDay.set($event)"
+                      name="editEventAllDay"
+                    />
+                    All day
+                  </label>
+                  @if (!editEventAllDay()) {
+                    <input
+                      type="time"
+                      [ngModel]="editEventStartTime()"
+                      (ngModelChange)="editEventStartTime.set($event)"
+                      name="editEventStartTime"
+                    />
+                    <input
+                      type="time"
+                      [ngModel]="editEventEndTime()"
+                      (ngModelChange)="editEventEndTime.set($event)"
+                      name="editEventEndTime"
+                    />
+                  }
+                </div>
+                <div class="event-form-row">
+                  <input
+                    type="text"
+                    [ngModel]="editEventHostedByName()"
+                    (ngModelChange)="editEventHostedByName.set($event)"
+                    name="editEventHostedByName"
+                    required
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="editEventLocation()"
+                    (ngModelChange)="editEventLocation.set($event)"
+                    name="editEventLocation"
+                    placeholder="Location"
+                  />
+                </div>
+                <div class="event-form-row">
+                  <input
+                    type="text"
+                    [ngModel]="editEventPrimaryContact()"
+                    (ngModelChange)="editEventPrimaryContact.set($event)"
+                    name="editEventPrimaryContact"
+                    placeholder="Primary contact"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="editEventSecondaryContact()"
+                    (ngModelChange)="editEventSecondaryContact.set($event)"
+                    name="editEventSecondaryContact"
+                    placeholder="Secondary contact"
+                  />
+                </div>
+                <textarea
+                  [ngModel]="editEventDescription()"
+                  (ngModelChange)="editEventDescription.set($event)"
+                  name="editEventDescription"
+                  placeholder="Description"
+                  rows="3"
+                ></textarea>
+                <div class="event-form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                  <button type="button" class="btn-link" (click)="cancelEditEvent()">Cancel</button>
+                </div>
+              </form>
+            } @else {
+              <div class="event-info">
+                <strong>{{ event.title }}</strong>
+                <span class="event-meta">
+                  {{ event.date }}
+                  @if (event.allDay) {
+                    — All day
+                  } @else if (event.startTime) {
+                    — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                  }
+                </span>
+                <span class="event-meta">Hosted by {{ event.hostedByName }}</span>
+                @if (event.location) {
+                  <span class="event-meta">{{ event.location }}</span>
+                }
+                @if (event.primaryContact) {
+                  <span class="event-meta">Contact: {{ event.primaryContact }}</span>
+                }
+                @if (event.secondaryContact) {
+                  <span class="event-meta">{{ event.secondaryContact }}</span>
+                }
+                @if (event.description) {
+                  <span class="event-meta">{{ event.description }}</span>
+                }
+              </div>
+              <span class="list-item-actions">
+                <button class="btn-link" (click)="startEditEvent(event)">Edit</button>
+                <button class="btn-danger" (click)="deleteEvent(event.id)">Delete</button>
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
   }
     </main>
   </div>

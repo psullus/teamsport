@@ -36,6 +36,20 @@
         </div>
 
         <div class="form-group">
+          <label for="clubType">Sport type</label>
+          <select
+            id="clubType"
+            [(ngModel)]="clubType"
+            name="clubType"
+            required
+          >
+            @for (sport of sportTypes; track sport) {
+              <option [value]="sport">{{ sport }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
           <label for="teamName">Team name</label>
           <input
             id="teamName"

@@ -5,12 +5,13 @@ import {
   CreateDateColumn,
   ManyToOne,
   ManyToMany,
+  OneToMany,
   Relation,
 } from 'typeorm';
 import { ROLES } from '@teamsport/shared';
 import type { Role } from '@teamsport/shared';
 import type { OrganisationEntity } from './organisation.entity';
-import type { ClubEntity } from './club.entity';
+import type { ClubMemberEntity } from './club-member.entity';
 import type { TeamEntity } from './team.entity';
 
 @Entity('users')
@@ -45,8 +46,8 @@ export class UserEntity {
   @ManyToOne('OrganisationEntity', 'users', { onDelete: 'CASCADE' })
   organisation!: Relation<OrganisationEntity>;
 
-  @ManyToMany('ClubEntity', 'members')
-  clubs!: Relation<ClubEntity[]>;
+  @OneToMany('ClubMemberEntity', 'user')
+  clubMemberships!: Relation<ClubMemberEntity[]>;
 
   @ManyToMany('TeamEntity', 'members')
   teams!: Relation<TeamEntity[]>;

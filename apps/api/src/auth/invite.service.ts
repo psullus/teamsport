@@ -31,10 +31,11 @@ export class InviteService {
   ) {}
 
   async createInvite(
-    email: string,
+    rawEmail: string,
     invitedById: string,
     organisationId: string,
   ): Promise<InviteEntity> {
+    const email = rawEmail.toLowerCase();
     const existingUser = await this.userRepo.findOne({ where: { email } });
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
@@ -69,10 +70,11 @@ export class InviteService {
   }
 
   async acceptInvite(
-    email: string,
+    rawEmail: string,
     password: string,
     inviteToken: string,
   ): Promise<{ user: User; token: string }> {
+    const email = rawEmail.toLowerCase();
     const invite = await this.inviteRepo.findOne({
       where: { token: inviteToken },
       relations: ['organisation'],

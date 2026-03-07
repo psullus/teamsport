@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import type { Role, User, ClubWithTeams } from '@teamsport/shared';
+import type { Role, User, ClubWithTeams, ClubMembership, SportType } from '@teamsport/shared';
 import { UserEntity } from './entities/user.entity';
+import { ClubMemberEntity } from './entities/club-member.entity';
 import { toUserResponse } from './auth.service';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -13,6 +14,8 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepo: Repository<UserEntity>,
+    @InjectRepository(ClubMemberEntity)
+    private clubMemberRepo: Repository<ClubMemberEntity>,
   ) {}
 
   async listByOrganisation(organisationId: string): Promise<User[]> {
@@ -78,9 +81,14 @@ export class UserService {
   }
 
   async getUserClubsWithTeams(userId: string): Promise<ClubWithTeams[]> {
+    const memberships = await this.clubMemberRepo.find({
+      where: { user: { id: userId } },
+      relations: ['club', 'club.organisation'],
+    });
+
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      relations: ['clubs', 'clubs.organisation', 'teams', 'teams.club'],
+      relations: ['teams', 'teams.club'],
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -95,15 +103,29 @@ export class UserService {
       userTeamsByClubId.get(clubId)!.push(team);
     }
 
-    return user.clubs.map((club) => ({
-      id: club.id,
-      name: club.name,
-      organisationId: club.organisation.id,
-      teams: (userTeamsByClubId.get(club.id) ?? []).map((team) => ({
+    return memberships.map((m) => ({
+      id: m.club.id,
+      name: m.club.name,
+      type: m.club.type as SportType,
+      organisationId: m.club.organisation.id,
+      teams: (userTeamsByClubId.get(m.club.id) ?? []).map((team) => ({
         id: team.id,
         name: team.name,
-        clubId: club.id,
+        clubId: m.club.id,
       })),
+    }));
+  }
+
+  async getUserClubMemberships(userId: string): Promise<ClubMembership[]> {
+    const memberships = await this.clubMemberRepo.find({
+      where: { user: { id: userId } },
+      relations: ['club'],
+    });
+    return memberships.map((m) => ({
+      clubId: m.club.id,
+      clubName: m.club.name,
+      clubType: m.club.type as SportType,
+      position: m.position,
     }));
   }
 

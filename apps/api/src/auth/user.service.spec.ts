@@ -4,12 +4,17 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
+import { ClubMemberEntity } from './entities/club-member.entity';
 
 const mockUserRepo = {
   find: vi.fn(),
   findOne: vi.fn(),
   delete: vi.fn(),
   save: vi.fn((entity) => Promise.resolve(entity)),
+};
+
+const mockClubMemberRepo = {
+  find: vi.fn(),
 };
 
 describe('UserService', () => {
@@ -22,6 +27,7 @@ describe('UserService', () => {
       providers: [
         UserService,
         { provide: getRepositoryToken(UserEntity), useValue: mockUserRepo },
+        { provide: getRepositoryToken(ClubMemberEntity), useValue: mockClubMemberRepo },
       ],
     }).compile();
 
@@ -85,12 +91,12 @@ describe('UserService', () => {
 
   describe('getUserClubsWithTeams', () => {
     it('should return clubs with filtered teams for the user', async () => {
+      mockClubMemberRepo.find.mockResolvedValue([
+        { club: { id: 'club-1', name: 'Club A', type: 'Touch', organisation: { id: 'org-1' } } },
+        { club: { id: 'club-2', name: 'Club B', type: 'Soccer', organisation: { id: 'org-1' } } },
+      ]);
       const user = {
         id: 'u1',
-        clubs: [
-          { id: 'club-1', name: 'Club A', organisation: { id: 'org-1' } },
-          { id: 'club-2', name: 'Club B', organisation: { id: 'org-1' } },
-        ],
         teams: [
           { id: 'team-1', name: 'Team A1', club: { id: 'club-1' } },
           { id: 'team-2', name: 'Team A2', club: { id: 'club-1' } },
@@ -105,6 +111,7 @@ describe('UserService', () => {
       expect(result[0]).toEqual({
         id: 'club-1',
         name: 'Club A',
+        type: 'Touch',
         organisationId: 'org-1',
         teams: [
           { id: 'team-1', name: 'Team A1', clubId: 'club-1' },
@@ -114,6 +121,7 @@ describe('UserService', () => {
       expect(result[1]).toEqual({
         id: 'club-2',
         name: 'Club B',
+        type: 'Soccer',
         organisationId: 'org-1',
         teams: [
           { id: 'team-3', name: 'Team B1', clubId: 'club-2' },
@@ -122,9 +130,11 @@ describe('UserService', () => {
     });
 
     it('should return empty teams array for clubs with no matching teams', async () => {
+      mockClubMemberRepo.find.mockResolvedValue([
+        { club: { id: 'club-1', name: 'Club A', type: 'Touch', organisation: { id: 'org-1' } } },
+      ]);
       const user = {
         id: 'u1',
-        clubs: [{ id: 'club-1', name: 'Club A', organisation: { id: 'org-1' } }],
         teams: [],
       } as unknown as UserEntity;
       mockUserRepo.findOne.mockResolvedValue(user);
@@ -136,9 +146,41 @@ describe('UserService', () => {
     });
 
     it('should throw NotFoundException for unknown user', async () => {
+      mockClubMemberRepo.find.mockResolvedValue([]);
       mockUserRepo.findOne.mockResolvedValue(null);
 
       await expect(service.getUserClubsWithTeams('bad-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getUserClubMemberships', () => {
+    it('should return club memberships with position info', async () => {
+      mockClubMemberRepo.find.mockResolvedValue([
+        {
+          club: { id: 'club-1', name: 'Touch Club', type: 'Touch' },
+          position: 'Wing',
+        },
+        {
+          club: { id: 'club-2', name: 'Soccer Club', type: 'Soccer' },
+          position: null,
+        },
+      ]);
+
+      const result = await service.getUserClubMemberships('u1');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        clubId: 'club-1',
+        clubName: 'Touch Club',
+        clubType: 'Touch',
+        position: 'Wing',
+      });
+      expect(result[1]).toEqual({
+        clubId: 'club-2',
+        clubName: 'Soccer Club',
+        clubType: 'Soccer',
+        position: null,
+      });
     });
   });
 

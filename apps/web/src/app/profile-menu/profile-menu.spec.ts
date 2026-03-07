@@ -260,18 +260,24 @@ describe('ProfileMenu', () => {
     expect(helpItem?.getAttribute('href')).toBe('/help');
   });
 
-  it('should render Settings as a link to /settings', async () => {
-    authService._setUser({ ...defaultUser });
+  it('should show initials when user has no avatar', async () => {
+    authService._setUser({ ...defaultUser, avatarUrl: null });
     const fixture = TestBed.createComponent(ProfileMenu);
-    fixture.componentInstance.isOpen.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
-    const items = Array.from(
-      fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
-    );
-    const settingsItem = items.find((el) => el.textContent?.includes('Settings'));
-    expect(settingsItem).toBeTruthy();
-    expect(settingsItem?.tagName).toBe('A');
-    expect(settingsItem?.getAttribute('href')).toBe('/settings');
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.avatar-img')).toBeNull();
+    expect(el.querySelector('.avatar')?.textContent?.trim()).toBeTruthy();
+  });
+
+  it('should show profile image when user has an avatar', async () => {
+    authService._setUser({ ...defaultUser, avatarUrl: 'https://example.com/photo.jpg' });
+    const fixture = TestBed.createComponent(ProfileMenu);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const img = el.querySelector('.avatar-img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.src).toContain('https://example.com/photo.jpg');
   });
 });

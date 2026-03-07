@@ -76,6 +76,23 @@ const mockLeagueDetail = {
   topScorers: [{ userId: 'u1', name: 'John Doe', goals: 2 }],
 };
 
+const mockEvents = [
+  {
+    id: 'event-1', title: 'Training', date: '2099-12-01',
+    startTime: '18:00', endTime: '19:30', allDay: false,
+    primaryContact: 'Coach', secondaryContact: null, hostedByName: 'My Club',
+    location: 'Main Pitch', description: 'Weekly training',
+    organisationId: 'org-1', createdAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'event-2', title: 'Past Match', date: '2020-01-01',
+    startTime: null, endTime: null, allDay: true,
+    primaryContact: null, secondaryContact: null, hostedByName: 'Other Club',
+    location: null, description: null,
+    organisationId: 'org-1', createdAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
 function createAuthService(loggedIn: boolean) {
   return {
     isLoggedIn: signal(loggedIn),
@@ -84,6 +101,7 @@ function createAuthService(loggedIn: boolean) {
     listTeamUsers: vi.fn().mockResolvedValue(mockTeamMembers),
     listLeagues: vi.fn().mockResolvedValue(mockLeagues),
     getLeagueDetail: vi.fn().mockResolvedValue(mockLeagueDetail),
+    listEvents: vi.fn().mockResolvedValue(mockEvents),
   };
 }
 
@@ -165,7 +183,91 @@ describe('Home (logged in)', () => {
     expect(el.querySelector('.dashboard-heading')?.textContent).toContain('Welcome, John');
   });
 
-  it('should load and display clubs in sidebar', async () => {
+  it('should show nav sidebar with four items', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const navItems = el.querySelectorAll('.nav-item');
+    expect(navItems.length).toBe(4);
+    expect(navItems[0].textContent?.trim()).toBe('Clubs');
+    expect(navItems[1].textContent?.trim()).toBe('Teams');
+    expect(navItems[2].textContent?.trim()).toBe('Leagues');
+    expect(navItems[3].textContent?.trim()).toBe('Events');
+  });
+
+  it('should default to clubs view with active state', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const active = el.querySelector('.nav-item--active');
+    expect(active?.textContent?.trim()).toBe('Clubs');
+    expect(el.querySelector('.club-list')).toBeTruthy();
+  });
+
+  it('should switch to teams view when clicking Teams nav', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[1].click();
+    fixture.detectChanges();
+    expect(el.querySelector('.nav-item--active')?.textContent?.trim()).toBe('Teams');
+    expect(el.querySelector('.teams-section')).toBeTruthy();
+    expect(el.querySelector('.club-list')).toBeNull();
+  });
+
+  it('should display all teams across clubs in teams view', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[1].click();
+    fixture.detectChanges();
+    const cards = el.querySelectorAll('.teams-section .team-card');
+    expect(cards.length).toBe(3);
+    expect(cards[0].textContent).toContain('Team A1');
+    expect(cards[0].textContent).toContain('Club A');
+    expect(cards[2].textContent).toContain('Team B1');
+    expect(cards[2].textContent).toContain('Club B');
+  });
+
+  it('should switch to leagues view when clicking Leagues nav', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[2].click();
+    fixture.detectChanges();
+    expect(el.querySelector('.nav-item--active')?.textContent?.trim()).toBe('Leagues');
+    expect(el.querySelector('.leagues-section')).toBeTruthy();
+    expect(el.querySelector('.club-list')).toBeNull();
+  });
+
+  it('should switch to events view when clicking Events nav', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[3].click();
+    fixture.detectChanges();
+    expect(el.querySelector('.nav-item--active')?.textContent?.trim()).toBe('Events');
+    expect(el.querySelector('.events-section')).toBeTruthy();
+    expect(el.querySelector('.club-list')).toBeNull();
+  });
+
+  it('should load and display clubs in clubs view', async () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -289,13 +391,17 @@ describe('Home (logged in)', () => {
     expect(el.textContent).toContain('Failed to load clubs');
   });
 
-  it('should load and display leagues', async () => {
+  it('should load and display leagues in leagues view', async () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     expect(authService.listLeagues).toHaveBeenCalled();
+    // Switch to leagues view
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[2].click();
+    fixture.detectChanges();
     const cards = el.querySelectorAll('.league-card');
     expect(cards.length).toBe(1);
     expect(cards[0].textContent).toContain('Spring League');
@@ -307,6 +413,10 @@ describe('Home (logged in)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
+    // Switch to leagues view
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[2].click();
+    fixture.detectChanges();
     const card = el.querySelector('.league-card') as HTMLButtonElement;
     card.click();
     fixture.detectChanges();
@@ -326,6 +436,10 @@ describe('Home (logged in)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
+    // Switch to leagues view
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[2].click();
+    fixture.detectChanges();
     const card = el.querySelector('.league-card') as HTMLButtonElement;
     card.click();
     fixture.detectChanges();
@@ -335,5 +449,53 @@ describe('Home (logged in)', () => {
     card.click();
     fixture.detectChanges();
     expect(el.querySelector('.league-detail')).toBeNull();
+  });
+
+  it('should load and display events in events view', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(authService.listEvents).toHaveBeenCalled();
+    const el = fixture.nativeElement as HTMLElement;
+    // Switch to events view
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[3].click();
+    fixture.detectChanges();
+    expect(el.querySelector('.events-section')).toBeTruthy();
+    expect(el.querySelector('.events-heading')?.textContent).toContain('Events');
+  });
+
+  it('should show upcoming events by default in events view', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    // Switch to events view
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[3].click();
+    fixture.detectChanges();
+    const cards = el.querySelectorAll('.event-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('Training');
+  });
+
+  it('should switch to past events tab', async () => {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    // Switch to events view
+    const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
+    navItems[3].click();
+    fixture.detectChanges();
+    const pastBtn = el.querySelectorAll('.event-tab-btn')[1] as HTMLButtonElement;
+    pastBtn.click();
+    fixture.detectChanges();
+    const cards = el.querySelectorAll('.event-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('Past Match');
   });
 });

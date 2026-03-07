@@ -4,9 +4,18 @@
     <p class="auth-subtitle">
       We've sent a verification link to your email address. Click the link to verify your account.
     </p>
-    <p class="dev-hint">
-      Dev: Check the API server console for the verification link.
-    </p>
-    <a class="btn btn-primary btn-full" routerLink="/">Go to home</a>
+    @if (resent()) {
+      <p class="success-msg">Verification email sent! Check your inbox.</p>
+    }
+    @if (error()) {
+      <p class="error-msg">{{ error() }}</p>
+    }
+    <button
+      class="btn btn-primary btn-full"
+      [disabled]="resending()"
+      (click)="resend()">
+      {{ resending() ? 'Sending...' : 'Resend email' }}
+    </button>
+    <a class="btn btn-secondary btn-full" routerLink="/">Go to home</a>
   </div>
 </div>

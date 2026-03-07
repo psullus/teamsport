@@ -9,6 +9,26 @@ export const ROLES = { USER, ADMIN, CONTROL } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
+export const SPORT_TYPES = [
+  'Touch',
+  'Soccer',
+  'Football',
+  'Hurling',
+  'Camogie',
+  'Rugby',
+] as const;
+
+export type SportType = (typeof SPORT_TYPES)[number];
+
+export const POSITIONS_BY_SPORT: Record<SportType, string[]> = {
+  Touch: ['Middle', 'Link', 'Wing', 'Sub'],
+  Soccer: ['Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Sub'],
+  Football: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward', 'Sub'],
+  Hurling: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward', 'Sub'],
+  Camogie: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward', 'Sub'],
+  Rugby: ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number 8', 'Scrum-half', 'Fly-half', 'Centre', 'Wing', 'Fullback', 'Sub'],
+};
+
 export interface Organisation {
   id: string;
   name: string;
@@ -30,6 +50,7 @@ export interface User {
 export interface Club {
   id: string;
   name: string;
+  type: SportType;
   organisationId: string;
 }
 
@@ -42,8 +63,16 @@ export interface Team {
 export interface ClubWithTeams {
   id: string;
   name: string;
+  type: SportType;
   organisationId: string;
   teams: Team[];
+}
+
+export interface ClubMembership {
+  clubId: string;
+  clubName: string;
+  clubType: SportType;
+  position: string | null;
 }
 
 export type LeagueType = 'club' | 'team';
@@ -57,6 +86,7 @@ export interface League {
   organisationId: string;
   clubId: string | null;
   started: boolean;
+  archived: boolean;
 }
 
 export interface Fixture {
@@ -104,6 +134,22 @@ export interface TopScorer {
   name: string;
   goals: number;
   fixtures: ScorerFixture[];
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  allDay: boolean;
+  primaryContact: string | null;
+  secondaryContact: string | null;
+  hostedByName: string;
+  location: string | null;
+  description: string | null;
+  organisationId: string;
+  createdAt: string;
 }
 
 export interface LeagueDetail {

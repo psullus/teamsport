@@ -23,6 +23,19 @@
   opacity: 0.85;
 }
 
+.avatar--img {
+  padding: 0;
+  overflow: hidden;
+  background: none;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .btn {
   display: inline-block;
   text-decoration: none;
@@ -100,7 +113,9 @@
 }
 
 .dropdown-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
@@ -111,6 +126,7 @@
   text-align: left;
   cursor: pointer;
   transition: background-color 0.1s ease;
+  text-decoration: none;
 }
 
 .dropdown-item:hover {
@@ -119,5 +135,5 @@
 
 .menu-icon {
   font-size: 1.125rem;
-  vertical-align: text-bottom;
+  color: var(--color-text-secondary);
 }

@@ -192,3 +192,94 @@
 .auth-footer a:hover {
   text-decoration: underline;
 }
+
+.memberships-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.memberships-section h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.membership-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.membership-row:last-child {
+  border-bottom: none;
+}
+
+.membership-club {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.membership-row select {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: var(--font-family);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.membership-row select:focus {
+  border-color: var(--color-accent);
+}
+
+.teams-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.teams-section h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.team-club-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.team-name {
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.team-name:last-child {
+  border-bottom: none;
+}
+
+.sport-type-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background-color: var(--color-border);
+  color: var(--color-text-secondary);
+  margin-left: 0.25rem;
+}

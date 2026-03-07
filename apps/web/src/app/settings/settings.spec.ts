@@ -31,6 +31,8 @@ function createMockAuthService(user: User | null = mockUser) {
       ...mockUser,
       avatarUrl: null,
     }),
+    listMyMemberships: vi.fn().mockResolvedValue([]),
+    listMyClubs: vi.fn().mockResolvedValue([]),
   };
 }
 
@@ -113,5 +115,48 @@ describe('Settings', () => {
     await fixture.componentInstance.removeAvatar();
     expect(authService.removeAvatar).toHaveBeenCalled();
     expect(fixture.componentInstance.avatarPreview()).toBeNull();
+  });
+
+  it('should show teams section when user has teams', async () => {
+    authService.listMyClubs.mockResolvedValue([
+      {
+        id: 'club-1',
+        name: 'Test Club',
+        type: 'GAA',
+        organisationId: 'org-1',
+        teams: [
+          { id: 'team-1', name: 'Senior A', clubId: 'club-1' },
+          { id: 'team-2', name: 'Junior B', clubId: 'club-1' },
+        ],
+      },
+    ]);
+    const fixture = TestBed.createComponent(Settings);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const section = fixture.nativeElement.querySelector('.teams-section');
+    expect(section).toBeTruthy();
+    expect(section.querySelector('h2').textContent).toContain('Your teams');
+    const teamNames = section.querySelectorAll('.team-name');
+    expect(teamNames.length).toBe(2);
+    expect(teamNames[0].textContent).toContain('Senior A');
+    expect(teamNames[1].textContent).toContain('Junior B');
+  });
+
+  it('should hide teams section when user has no teams', async () => {
+    authService.listMyClubs.mockResolvedValue([
+      {
+        id: 'club-1',
+        name: 'Test Club',
+        type: 'GAA',
+        organisationId: 'org-1',
+        teams: [],
+      },
+    ]);
+    const fixture = TestBed.createComponent(Settings);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.teams-section')).toBeNull();
   });
 });

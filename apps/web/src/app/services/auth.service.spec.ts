@@ -53,7 +53,7 @@ describe('AuthService', () => {
   });
 
   it('should sign up via HTTP and navigate to /verify-email-notice', async () => {
-    const promise = service.signup('My Org', 'test@example.com', 'pass1234', 'Club', 'Team');
+    const promise = service.signup('My Org', 'test@example.com', 'pass1234', 'Club', 'Touch', 'Team');
 
     const req = httpTesting.expectOne('/api/auth/signup');
     expect(req.request.method).toBe('POST');
@@ -62,6 +62,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       password: 'pass1234',
       clubName: 'Club',
+      clubType: 'Touch',
       teamName: 'Team',
     });
     req.flush({ user: mockUser() });
@@ -131,7 +132,7 @@ describe('AuthService', () => {
 
   it('should logout via POST, clear user, and navigate to /', async () => {
     // First log in
-    const loginPromise = service.signup('Org', 'a@b.com', 'password', 'Club', 'Team');
+    const loginPromise = service.signup('Org', 'a@b.com', 'password', 'Club', 'Touch', 'Team');
     httpTesting.expectOne('/api/auth/signup').flush({ user: mockUser() });
     await loginPromise;
 
@@ -149,7 +150,7 @@ describe('AuthService', () => {
   });
 
   it('should return user initials from organisationName', async () => {
-    const promise = service.signup('River Valley FC', 'rv@example.com', 'password', 'Club', 'Team');
+    const promise = service.signup('River Valley FC', 'rv@example.com', 'password', 'Club', 'Touch', 'Team');
     httpTesting.expectOne('/api/auth/signup').flush({
       user: mockUser({ organisationName: 'River Valley FC', email: 'rv@example.com' }),
     });
@@ -396,6 +397,62 @@ describe('AuthService', () => {
     const promise = service.deleteGoal('goal-1');
 
     const req = httpTesting.expectOne('/api/auth/goals/goal-1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ success: true });
+
+    await promise;
+  });
+
+  it('should list events via HTTP GET', async () => {
+    const promise = service.listEvents();
+
+    const req = httpTesting.expectOne('/api/auth/events');
+    expect(req.request.method).toBe('GET');
+    req.flush([{ id: 'e1', title: 'Training' }]);
+
+    const result = await promise;
+    expect(result).toHaveLength(1);
+  });
+
+  it('should create event via HTTP POST', async () => {
+    const promise = service.createEvent({
+      title: 'Training',
+      date: '2026-03-10',
+      startTime: null,
+      endTime: null,
+      allDay: false,
+      primaryContact: null,
+      secondaryContact: null,
+      hostedByName: 'My Club',
+      location: null,
+      description: null,
+    });
+
+    const req = httpTesting.expectOne('/api/auth/events');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.title).toBe('Training');
+    req.flush({ id: 'e1', title: 'Training' });
+
+    const result = await promise;
+    expect(result.title).toBe('Training');
+  });
+
+  it('should update event via HTTP PATCH', async () => {
+    const promise = service.updateEvent('event-1', { title: 'Updated' });
+
+    const req = httpTesting.expectOne('/api/auth/events/event-1');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ title: 'Updated' });
+    req.flush({ id: 'event-1', title: 'Updated' });
+
+    const result = await promise;
+    expect(result.title).toBe('Updated');
+  });
+
+  it('should delete event via HTTP DELETE', async () => {
+    const promise = service.deleteEvent('event-1');
+
+    const req = httpTesting.expectOne('/api/auth/events/event-1');
     expect(req.request.method).toBe('DELETE');
     req.flush({ success: true });
 

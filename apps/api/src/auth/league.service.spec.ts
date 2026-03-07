@@ -152,6 +152,80 @@ describe('LeagueService', () => {
     });
   });
 
+  describe('archiveLeague', () => {
+    it('should set archived to true', async () => {
+      const league = {
+        id: 'league-1', name: 'League', type: 'club', archived: false,
+        organisation: { id: 'org-1' }, club: null,
+      };
+      mockLeagueRepo.findOne.mockResolvedValue(league);
+      mockLeagueRepo.save.mockImplementation((e) => Promise.resolve(e));
+
+      const result = await service.archiveLeague('league-1', true);
+
+      expect(league.archived).toBe(true);
+      expect(mockLeagueRepo.save).toHaveBeenCalledWith(league);
+      expect(result.archived).toBe(true);
+    });
+
+    it('should set archived to false (unarchive)', async () => {
+      const league = {
+        id: 'league-1', name: 'League', type: 'club', archived: true,
+        organisation: { id: 'org-1' }, club: null,
+      };
+      mockLeagueRepo.findOne.mockResolvedValue(league);
+      mockLeagueRepo.save.mockImplementation((e) => Promise.resolve(e));
+
+      const result = await service.archiveLeague('league-1', false);
+
+      expect(league.archived).toBe(false);
+      expect(result.archived).toBe(false);
+    });
+
+    it('should throw NotFoundException if league not found', async () => {
+      mockLeagueRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.archiveLeague('bad', true)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('listByOrganisation - archive filtering', () => {
+    it('should filter out archived leagues by default', async () => {
+      mockLeagueRepo.find.mockResolvedValue([
+        {
+          id: 'league-1', name: 'Active', type: 'club', archived: false,
+          organisation: { id: 'org-1' }, club: null,
+        },
+        {
+          id: 'league-2', name: 'Old', type: 'club', archived: true,
+          organisation: { id: 'org-1' }, club: null,
+        },
+      ]);
+
+      const result = await service.listByOrganisation('org-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Active');
+    });
+
+    it('should include archived leagues when includeArchived is true', async () => {
+      mockLeagueRepo.find.mockResolvedValue([
+        {
+          id: 'league-1', name: 'Active', type: 'club', archived: false,
+          organisation: { id: 'org-1' }, club: null,
+        },
+        {
+          id: 'league-2', name: 'Old', type: 'club', archived: true,
+          organisation: { id: 'org-1' }, club: null,
+        },
+      ]);
+
+      const result = await service.listByOrganisation('org-1', true);
+
+      expect(result).toHaveLength(2);
+    });
+  });
+
   describe('deleteLeague', () => {
     it('should delete a league', async () => {
       mockLeagueRepo.findOne.mockResolvedValue({ id: 'league-1' });

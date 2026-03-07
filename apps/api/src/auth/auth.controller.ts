@@ -14,9 +14,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { AuthService } from './auth.service';
 import { UserService } from './user.service';
 import { OrganisationService } from './organisation.service';
@@ -24,6 +21,7 @@ import { InviteService } from './invite.service';
 import { ClubService } from './club.service';
 import { TeamService } from './team.service';
 import { LeagueService } from './league.service';
+import { EventService } from './event.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -37,19 +35,15 @@ import { CreateClubDto } from './dto/create-club.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { ManageMembershipDto } from './dto/manage-membership.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdatePositionDto } from './dto/update-position.dto';
 import { CreateLeagueDto } from './dto/create-league.dto';
 import { CreateFixtureDto } from './dto/create-fixture.dto';
 import { UpdateFixtureDto } from './dto/update-fixture.dto';
 import { CreateGoalDto } from './dto/create-goal.dto';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { ROLES } from '@teamsport/shared';
 import { setTokenCookie, clearTokenCookie } from './cookie.utils';
-
-const avatarStorage = diskStorage({
-  destination: 'uploads/avatars',
-  filename: (_req, file, cb) => {
-    cb(null, `${uuidv4()}${extname(file.originalname)}`);
-  },
-});
 
 @Controller('auth')
 export class AuthController {
@@ -61,6 +55,7 @@ export class AuthController {
     private clubService: ClubService,
     private teamService: TeamService,
     private leagueService: LeagueService,
+    private eventService: EventService,
   ) {}
 
   @Post('signup')
@@ -70,6 +65,7 @@ export class AuthController {
       dto.email,
       dto.password,
       dto.clubName,
+      dto.clubType,
       dto.teamName,
     );
     setTokenCookie(res, token);
@@ -110,6 +106,23 @@ export class AuthController {
     return this.userService.getUserClubsWithTeams(currentUser.id);
   }
 
+  @Get('me/memberships')
+  @UseGuards(JwtAuthGuard)
+  async getMyMemberships(@CurrentUser() currentUser: { id: string; role: string }) {
+    return this.userService.getUserClubMemberships(currentUser.id);
+  }
+
+  @Patch('me/memberships/:clubId/position')
+  @UseGuards(JwtAuthGuard)
+  async updateMyPosition(
+    @CurrentUser() currentUser: { id: string; role: string },
+    @Param('clubId') clubId: string,
+    @Body() dto: UpdatePositionDto,
+  ) {
+    await this.clubService.updatePosition(clubId, currentUser.id, dto.position ?? null);
+    return { success: true };
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() currentUser: { id: string; role: string }) {
@@ -119,6 +132,13 @@ export class AuthController {
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
     await this.authService.verifyEmail(token);
+    return { success: true };
+  }
+
+  @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  async resendVerification(@CurrentUser() currentUser: { id: string; role: string }) {
+    await this.authService.resendVerification(currentUser.id);
     return { success: true };
   }
 
@@ -194,7 +214,7 @@ export class AuthController {
 
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('avatar', { storage: avatarStorage }))
+  @UseInterceptors(FileInterceptor('avatar'))
   async updateProfile(
     @CurrentUser() currentUser: { id: string; role: string },
     @Body() dto: UpdateProfileDto,
@@ -219,7 +239,7 @@ export class AuthController {
     @CurrentUser() currentUser: { id: string; role: string },
   ) {
     const user = await this.authService.getMe(currentUser.id);
-    return this.clubService.create(dto.name, user.organisationId);
+    return this.clubService.create(dto.name, dto.type ?? 'Touch', user.organisationId);
   }
 
   @Get('clubs')
@@ -256,8 +276,8 @@ export class AuthController {
   @Patch('clubs/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)
-  async renameClub(@Param('id') id: string, @Body() dto: CreateClubDto) {
-    return this.clubService.rename(id, dto.name);
+  async updateClub(@Param('id') id: string, @Body() dto: CreateClubDto) {
+    return this.clubService.update(id, dto.name, dto.type);
   }
 
   @Delete('clubs/:id')
@@ -325,9 +345,15 @@ export class AuthController {
 
   @Get('leagues')
   @UseGuards(JwtAuthGuard)
-  async listLeagues(@CurrentUser() currentUser: { id: string; role: string }) {
+  async listLeagues(
+    @CurrentUser() currentUser: { id: string; role: string },
+    @Query('includeArchived') includeArchived?: string,
+  ) {
     const user = await this.authService.getMe(currentUser.id);
-    return this.leagueService.listByOrganisation(user.organisationId);
+    return this.leagueService.listByOrganisation(
+      user.organisationId,
+      includeArchived === 'true',
+    );
   }
 
   @Get('leagues/:id')
@@ -345,6 +371,16 @@ export class AuthController {
   ) {
     const user = await this.authService.getMe(currentUser.id);
     return this.leagueService.create(dto.name, dto.type, user.organisationId, dto.clubId);
+  }
+
+  @Patch('leagues/:id/archive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async archiveLeague(
+    @Param('id') id: string,
+    @Body() body: { archived: boolean },
+  ) {
+    return this.leagueService.archiveLeague(id, body.archived);
   }
 
   @Delete('leagues/:id')
@@ -425,6 +461,41 @@ export class AuthController {
   @Roles(ROLES.ADMIN)
   async deleteGoal(@Param('id') id: string) {
     await this.leagueService.deleteGoal(id);
+    return { success: true };
+  }
+
+  // --- Event endpoints ---
+
+  @Post('events')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async createEvent(
+    @Body() dto: CreateEventDto,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.eventService.create(user.organisationId, dto);
+  }
+
+  @Get('events')
+  @UseGuards(JwtAuthGuard)
+  async listEvents(@CurrentUser() currentUser: { id: string; role: string }) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.eventService.listByOrganisation(user.organisationId);
+  }
+
+  @Patch('events/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async updateEvent(@Param('id') id: string, @Body() dto: UpdateEventDto) {
+    return this.eventService.update(id, dto);
+  }
+
+  @Delete('events/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async deleteEvent(@Param('id') id: string) {
+    await this.eventService.delete(id);
     return { success: true };
   }
 }

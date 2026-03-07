@@ -18,10 +18,9 @@
       <h2>Your Profile</h2>
       <p>
         View your account information on the <a routerLink="/profile">profile</a> page, including
-        your name, email, phone number, organisation, and role. To update your details — such as
-        your first name, last name, phone number, or avatar — visit the
-        <a routerLink="/settings">settings</a> page. You can upload a profile picture that will
-        appear in place of your default initials.
+        your name, email, phone number, organisation, and role. You can update your first name,
+        last name, phone number, and avatar from the profile page. You can upload a profile picture
+        that will appear in place of your default initials.
       </p>
     </section>
 
@@ -45,51 +44,59 @@
     </section>
 
     <section class="help-section">
+      <h2>Leagues</h2>
+      <p>
+        Leagues let you run competitions between clubs or teams. Admins can create a league, add
+        participants, and schedule fixtures manually or generate a full round-robin schedule
+        automatically. Each fixture tracks scores, status (scheduled, completed, or no-show), and
+        individual scorers. The platform automatically calculates standings (points, wins, draws,
+        losses, goal difference) and a top scorers table. Leagues can be archived when a season
+        ends and unarchived later if needed.
+      </p>
+    </section>
+
+    <section class="help-section">
+      <h2>Events</h2>
+      <p>
+        Events let you share upcoming activities with your organisation — training sessions, matches,
+        social gatherings, or anything else. Each event has a title, date, host, and optional details
+        like start/end times, location, contacts, and a description. Events can also be marked as
+        all-day. The home page splits events into upcoming and past tabs so members can quickly see
+        what's next.
+      </p>
+    </section>
+
+    <section class="help-section">
       <h2>Roles &amp; Permissions</h2>
       <dl class="role-list">
         <div class="role-item">
           <dt>USER</dt>
           <dd>
-            The default role assigned to new members. Users can view their own profile and settings,
-            but cannot manage other members or access the admin dashboard.
+            The default role assigned to new members. Users can view their own profile,
+            but cannot manage other members or access the account settings.
           </dd>
         </div>
         <div class="role-item">
           <dt>ADMIN</dt>
           <dd>
-            Organisation administrators can access the admin dashboard to manage members within
-            their organisation, invite new users, change roles, and manage clubs and teams.
-          </dd>
-        </div>
-        <div class="role-item">
-          <dt>CONTROL</dt>
-          <dd>
-            System-level administrators with full access across all organisations. Control users
-            can access the control panel for platform-wide management in addition to all admin
-            capabilities.
+            Organisation administrators can access the account settings to manage members within
+            their organisation, invite new users, change roles, and manage clubs, teams, leagues,
+            and events.
           </dd>
         </div>
       </dl>
     </section>
 
+    @if (isAdmin()) {
     <section class="help-section">
-      <h2>Admin Dashboard</h2>
+      <h2>Account Settings</h2>
       <p>
-        The admin dashboard is available to users with the ADMIN or CONTROL role. From here you can
-        view all members in your organisation, invite new members by email, change a member's role,
-        and remove members from the organisation. Access it via the "Organisation dashboard" link
-        in the profile menu.
+        The account settings page is available to administrators. From here you can view all members
+        in your organisation, invite new members by email, change a member's role, and manage clubs,
+        teams, leagues, and events. Access it via the "Account settings" link in the profile menu.
       </p>
     </section>
-
-    <section class="help-section">
-      <h2>Control Panel</h2>
-      <p>
-        The control panel is reserved for users with the CONTROL role. It provides system-level
-        management capabilities across all organisations on the platform. Access it via the
-        "Control panel" link in the profile menu.
-      </p>
-    </section>
+    }
 
     <p class="auth-footer"><a routerLink="/">Back to home</a></p>
   </div>

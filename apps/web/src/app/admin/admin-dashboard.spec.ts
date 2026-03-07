@@ -15,7 +15,7 @@ describe('AdminDashboard', () => {
     listClubUsers: ReturnType<typeof vi.fn>;
     addUserToClub: ReturnType<typeof vi.fn>;
     removeUserFromClub: ReturnType<typeof vi.fn>;
-    renameClub: ReturnType<typeof vi.fn>;
+    updateClub: ReturnType<typeof vi.fn>;
     deleteClub: ReturnType<typeof vi.fn>;
     listTeams: ReturnType<typeof vi.fn>;
     createTeam: ReturnType<typeof vi.fn>;
@@ -29,12 +29,17 @@ describe('AdminDashboard', () => {
     createLeague: ReturnType<typeof vi.fn>;
     getLeagueDetail: ReturnType<typeof vi.fn>;
     deleteLeague: ReturnType<typeof vi.fn>;
+    archiveLeague: ReturnType<typeof vi.fn>;
     generateRoundRobin: ReturnType<typeof vi.fn>;
     createFixture: ReturnType<typeof vi.fn>;
     updateFixture: ReturnType<typeof vi.fn>;
     deleteFixture: ReturnType<typeof vi.fn>;
     createGoal: ReturnType<typeof vi.fn>;
     deleteGoal: ReturnType<typeof vi.fn>;
+    listEvents: ReturnType<typeof vi.fn>;
+    createEvent: ReturnType<typeof vi.fn>;
+    updateEvent: ReturnType<typeof vi.fn>;
+    deleteEvent: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -48,7 +53,7 @@ describe('AdminDashboard', () => {
       ]),
       inviteUser: vi.fn().mockResolvedValue(undefined),
       listClubs: vi.fn().mockResolvedValue([
-        { id: 'club-1', name: 'Club A', organisationId: 'org-1' },
+        { id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' },
       ]),
       createClub: vi.fn().mockResolvedValue({ id: 'club-2', name: 'Club B' }),
       listClubUsers: vi.fn().mockResolvedValue([
@@ -56,7 +61,7 @@ describe('AdminDashboard', () => {
       ]),
       addUserToClub: vi.fn().mockResolvedValue(undefined),
       removeUserFromClub: vi.fn().mockResolvedValue(undefined),
-      renameClub: vi.fn().mockResolvedValue({ id: 'club-1', name: 'Renamed Club' }),
+      updateClub: vi.fn().mockResolvedValue({ id: 'club-1', name: 'Renamed Club', type: 'Touch' }),
       deleteClub: vi.fn().mockResolvedValue(undefined),
       listTeams: vi.fn().mockResolvedValue([
         { id: 'team-1', name: 'Team A', clubId: 'club-1' },
@@ -71,11 +76,12 @@ describe('AdminDashboard', () => {
       deleteTeam: vi.fn().mockResolvedValue(undefined),
       changeUserRole: vi.fn().mockResolvedValue({ id: '1', role: 'USER' }),
       listLeagues: vi.fn().mockResolvedValue([
-        { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false },
+        { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false },
       ]),
+      archiveLeague: vi.fn().mockResolvedValue({ id: 'league-1', archived: true }),
       createLeague: vi.fn().mockResolvedValue({ id: 'league-2', name: 'Autumn League' }),
       getLeagueDetail: vi.fn().mockResolvedValue({
-        league: { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false },
+        league: { id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false },
         fixtures: [
           {
             id: 'fix-1', leagueId: 'league-1', homeId: 'club-1', awayId: 'club-2',
@@ -105,6 +111,16 @@ describe('AdminDashboard', () => {
       deleteFixture: vi.fn().mockResolvedValue(undefined),
       createGoal: vi.fn().mockResolvedValue({ id: 'goal-1' }),
       deleteGoal: vi.fn().mockResolvedValue(undefined),
+      listEvents: vi.fn().mockResolvedValue([{
+        id: 'event-1', title: 'Training', date: '2026-03-10',
+        startTime: '18:00', endTime: '19:30', allDay: false,
+        primaryContact: null, secondaryContact: null, hostedByName: 'My Club',
+        location: 'Main Pitch', description: null, organisationId: 'org-1',
+        createdAt: '2026-03-01T00:00:00.000Z',
+      }]),
+      createEvent: vi.fn().mockResolvedValue({ id: 'event-2', title: 'Match' }),
+      updateEvent: vi.fn().mockResolvedValue({ id: 'event-1', title: 'Updated Training' }),
+      deleteEvent: vi.fn().mockResolvedValue(undefined),
     };
     await TestBed.configureTestingModule({
       imports: [AdminDashboard],
@@ -197,7 +213,7 @@ describe('AdminDashboard', () => {
     const component = fixture.componentInstance;
     component.clubName.set('New Club');
     await component.createClub();
-    expect(authService.createClub).toHaveBeenCalledWith('New Club');
+    expect(authService.createClub).toHaveBeenCalledWith('New Club', 'Touch');
     expect(component.clubName()).toBe('');
   });
 
@@ -206,7 +222,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    await component.selectClub({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    await component.selectClub({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     expect(component.selectedClub()?.id).toBe('club-1');
     expect(authService.listClubUsers).toHaveBeenCalledWith('club-1');
     expect(authService.listTeams).toHaveBeenCalledWith('club-1');
@@ -219,10 +235,12 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const tabs = el.querySelectorAll('.sidebar-btn');
-    expect(tabs.length).toBe(3);
+    expect(tabs.length).toBe(5);
     expect(tabs[0].textContent).toContain('Members');
     expect(tabs[1].textContent).toContain('Clubs');
-    expect(tabs[2].textContent).toContain('Leagues');
+    expect(tabs[2].textContent).toContain('Teams');
+    expect(tabs[3].textContent).toContain('Leagues');
+    expect(tabs[4].textContent).toContain('Events');
     expect(tabs[0].classList.contains('sidebar-btn--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Invite a member');
   });
@@ -246,11 +264,11 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     component.editingClubId.set('club-1');
     component.editClubName.set('Renamed Club');
-    await component.saveClubName();
-    expect(authService.renameClub).toHaveBeenCalledWith('club-1', 'Renamed Club');
+    await component.saveClub();
+    expect(authService.updateClub).toHaveBeenCalledWith('club-1', 'Renamed Club', 'Touch');
     expect(component.editingClubId()).toBeNull();
   });
 
@@ -259,7 +277,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     await component.deleteClub('club-1');
     expect(authService.deleteClub).toHaveBeenCalledWith('club-1');
     expect(component.selectedClub()).toBeNull();
@@ -270,7 +288,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     component.selectedTeam.set({ id: 'team-1', name: 'Team A', clubId: 'club-1' });
     component.editingTeamId.set('team-1');
     component.editTeamName.set('Renamed Team');
@@ -284,7 +302,7 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
-    component.selectedClub.set({ id: 'club-1', name: 'Club A', organisationId: 'org-1' });
+    component.selectedClub.set({ id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' });
     component.selectedTeam.set({ id: 'team-1', name: 'Team A', clubId: 'club-1' });
     await component.deleteTeam('team-1');
     expect(authService.deleteTeam).toHaveBeenCalledWith('team-1');
@@ -315,7 +333,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const leaguesTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
+    const leaguesTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
     leaguesTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('leagues');
@@ -341,7 +359,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     const component = fixture.componentInstance;
     await component.selectLeague({
-      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false,
+      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false,
     });
     expect(component.selectedLeague()?.id).toBe('league-1');
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
@@ -358,18 +376,120 @@ describe('AdminDashboard', () => {
     expect(component.selectedLeague()).toBeNull();
   });
 
+  it('should archive a league', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.archiveLeague('league-1', true);
+    expect(authService.archiveLeague).toHaveBeenCalledWith('league-1', true);
+    expect(authService.listLeagues).toHaveBeenCalled();
+  });
+
+  it('should unarchive a league', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.archiveLeague('league-1', false);
+    expect(authService.archiveLeague).toHaveBeenCalledWith('league-1', false);
+    expect(authService.listLeagues).toHaveBeenCalled();
+  });
+
+  it('should load leagues with includeArchived=true', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(authService.listLeagues).toHaveBeenCalledWith(true);
+  });
+
   it('should generate round robin fixtures', async () => {
     const fixture = TestBed.createComponent(AdminDashboard);
     fixture.detectChanges();
     await fixture.whenStable();
     const component = fixture.componentInstance;
     component.selectedLeague.set({
-      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false,
+      id: 'league-1', name: 'Spring League', type: 'club', organisationId: 'org-1', clubId: null, started: false, archived: false,
     });
     await component.generateRoundRobin();
     expect(authService.generateRoundRobin).toHaveBeenCalledWith('league-1', {
       days: ['monday'], timeSlots: ['19:00'], force: false,
     });
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
+  });
+
+  it('should load events on init', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(authService.listEvents).toHaveBeenCalled();
+    expect(fixture.componentInstance.events()).toHaveLength(1);
+  });
+
+  it('should switch to Events tab', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const eventsTab = el.querySelectorAll('.sidebar-btn')[4] as HTMLButtonElement;
+    eventsTab.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeTab()).toBe('events');
+    expect(eventsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(el.querySelector('h2')?.textContent).toContain('Create Event');
+  });
+
+  it('should create an event', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.eventTitle.set('New Match');
+    component.eventDate.set('2026-04-01');
+    component.eventHostedByName.set('My Club');
+    await component.createEvent();
+    expect(authService.createEvent).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'New Match',
+      date: '2026-04-01',
+      hostedByName: 'My Club',
+    }));
+    expect(component.eventTitle()).toBe('');
+  });
+
+  it('should delete an event', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.deleteEvent('event-1');
+    expect(authService.deleteEvent).toHaveBeenCalledWith('event-1');
+  });
+
+  it('should switch to Teams tab and show teams', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const teamsTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
+    teamsTab.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeTab()).toBe('teams');
+    expect(teamsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(el.querySelector('h2')?.textContent).toContain('Teams');
+  });
+
+  it('should create a team from the Teams tab', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.teamClubId.set('club-1');
+    component.teamName.set('New Team');
+    await component.createTeamFromTab();
+    expect(authService.createTeam).toHaveBeenCalledWith('New Team', 'club-1');
+    expect(component.teamName()).toBe('');
+    expect(component.teamClubId()).toBe('');
   });
 });

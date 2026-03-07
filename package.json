@@ -20,9 +20,9 @@
     "test:web": "ng test",
     "test:api": "npm -w apps/api run test",
     "test:e2e": "npm -w e2e run test",
-    "cdk:synth": "npm -w infra run build && cd infra && npx cdk synth",
-    "cdk:deploy": "npm -w infra run build && cd infra && npx cdk deploy",
-    "cdk:diff": "npm -w infra run build && cd infra && npx cdk diff"
+    "sst:dev": "AWS_PROFILE=terminal npx sst dev",
+    "sst:deploy": "AWS_PROFILE=terminal npx sst deploy",
+    "sst:remove": "AWS_PROFILE=terminal npx sst remove"
   },
   "prettier": {
     "printWidth": 100,
