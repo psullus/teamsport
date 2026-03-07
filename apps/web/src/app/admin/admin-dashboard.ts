@@ -14,7 +14,7 @@ import {
   styleUrl: './admin-dashboard.css',
 })
 export class AdminDashboard implements OnInit {
-  activeTab = signal<'members' | 'clubs' | 'leagues' | 'events'>('members');
+  activeTab = signal<'members' | 'clubs' | 'teams' | 'leagues' | 'events'>('members');
   inviteEmail = signal('');
   inviteSuccess = signal('');
   inviteError = signal('');
@@ -39,6 +39,8 @@ export class AdminDashboard implements OnInit {
   addTeamUserId = signal('');
   editingTeamId = signal<string | null>(null);
   editTeamName = signal('');
+  teamClubId = signal('');
+  teamError = signal('');
 
   leagues = signal<League[]>([]);
   selectedLeague = signal<League | null>(null);
@@ -88,7 +90,7 @@ export class AdminDashboard implements OnInit {
 
   constructor(private authService: AuthService) {}
 
-  setTab(tab: 'members' | 'clubs' | 'leagues' | 'events') {
+  setTab(tab: 'members' | 'clubs' | 'teams' | 'leagues' | 'events') {
     this.activeTab.set(tab);
   }
 
@@ -239,6 +241,22 @@ export class AdminDashboard implements OnInit {
     await this.authService.createTeam(name, club.id);
     this.teamName.set('');
     this.loadTeams(club.id);
+    this.loadAllTeams();
+  }
+
+  async createTeamFromTab() {
+    const clubId = this.teamClubId();
+    const name = this.teamName();
+    this.teamError.set('');
+    if (!clubId || !name) return;
+    try {
+      await this.authService.createTeam(name, clubId);
+      this.teamName.set('');
+      this.teamClubId.set('');
+      this.loadAllTeams();
+    } catch (err: any) {
+      this.teamError.set(err?.error?.message || 'Failed to create team.');
+    }
   }
 
   startEditTeam(team: Team) {
@@ -260,6 +278,7 @@ export class AdminDashboard implements OnInit {
     this.editTeamName.set('');
     const club = this.selectedClub();
     if (club) this.loadTeams(club.id);
+    this.loadAllTeams();
     const selected = this.selectedTeam();
     if (selected?.id === id) {
       this.selectedTeam.set({ ...selected, name });
@@ -274,6 +293,7 @@ export class AdminDashboard implements OnInit {
     }
     const club = this.selectedClub();
     if (club) this.loadTeams(club.id);
+    this.loadAllTeams();
   }
 
   async selectTeam(team: Team) {

@@ -235,11 +235,12 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const tabs = el.querySelectorAll('.sidebar-btn');
-    expect(tabs.length).toBe(4);
+    expect(tabs.length).toBe(5);
     expect(tabs[0].textContent).toContain('Members');
     expect(tabs[1].textContent).toContain('Clubs');
-    expect(tabs[2].textContent).toContain('Leagues');
-    expect(tabs[3].textContent).toContain('Events');
+    expect(tabs[2].textContent).toContain('Teams');
+    expect(tabs[3].textContent).toContain('Leagues');
+    expect(tabs[4].textContent).toContain('Events');
     expect(tabs[0].classList.contains('sidebar-btn--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Invite a member');
   });
@@ -332,7 +333,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const leaguesTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
+    const leaguesTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
     leaguesTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('leagues');
@@ -431,7 +432,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const eventsTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
+    const eventsTab = el.querySelectorAll('.sidebar-btn')[4] as HTMLButtonElement;
     eventsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('events');
@@ -463,5 +464,32 @@ describe('AdminDashboard', () => {
     const component = fixture.componentInstance;
     await component.deleteEvent('event-1');
     expect(authService.deleteEvent).toHaveBeenCalledWith('event-1');
+  });
+
+  it('should switch to Teams tab and show teams', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const teamsTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
+    teamsTab.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeTab()).toBe('teams');
+    expect(teamsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(el.querySelector('h2')?.textContent).toContain('Teams');
+  });
+
+  it('should create a team from the Teams tab', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.teamClubId.set('club-1');
+    component.teamName.set('New Team');
+    await component.createTeamFromTab();
+    expect(authService.createTeam).toHaveBeenCalledWith('New Team', 'club-1');
+    expect(component.teamName()).toBe('');
+    expect(component.teamClubId()).toBe('');
   });
 });

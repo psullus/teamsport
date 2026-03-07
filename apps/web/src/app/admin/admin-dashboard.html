@@ -15,6 +15,11 @@
       >Clubs</button>
       <button
         class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'teams'"
+        (click)="setTab('teams')"
+      >Teams</button>
+      <button
+        class="sidebar-btn"
         [class.sidebar-btn--active]="activeTab() === 'leagues'"
         (click)="setTab('leagues')"
       >Leagues</button>
@@ -287,6 +292,108 @@
         }
       </section>
     }
+  }
+  }
+
+  @if (activeTab() === 'teams') {
+  <section class="dashboard-section">
+    <h2>Teams</h2>
+    <form class="invite-form" (ngSubmit)="createTeamFromTab()">
+      <select
+        [ngModel]="teamClubId()"
+        (ngModelChange)="teamClubId.set($event)"
+        name="teamClubId"
+      >
+        <option value="">Select a club…</option>
+        @for (club of clubs(); track club.id) {
+          <option [value]="club.id">{{ club.name }}</option>
+        }
+      </select>
+      <input
+        type="text"
+        [ngModel]="teamName()"
+        (ngModelChange)="teamName.set($event)"
+        name="teamName"
+        placeholder="New team name"
+        required
+      />
+      <button type="submit" class="btn btn-primary">Create team</button>
+    </form>
+    @if (teamError()) {
+      <p class="error-msg">{{ teamError() }}</p>
+    }
+    @if (allTeams().length === 0) {
+      <p class="empty-state">No teams yet.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (team of allTeams(); track team.id) {
+          <li class="list-item-row">
+            @if (editingTeamId() === team.id) {
+              <form class="inline-edit-form" (ngSubmit)="saveTeamName()">
+                <input
+                  type="text"
+                  [ngModel]="editTeamName()"
+                  (ngModelChange)="editTeamName.set($event)"
+                  name="editTeamName"
+                  required
+                />
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="button" class="btn-link" (click)="cancelEditTeam()">Cancel</button>
+              </form>
+            } @else {
+              <button
+                class="btn-link"
+                [class.active]="selectedTeam()?.id === team.id"
+                (click)="selectTeam(team)"
+              >{{ team.name }}</button>
+              <span class="sport-type-badge">{{ clubNameForTeam(team.clubId) }}</span>
+              <span class="list-item-actions">
+                <button class="btn-link" (click)="startEditTeam(team)">Edit</button>
+                <button class="btn-danger" (click)="deleteTeam(team.id)">Delete</button>
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (selectedTeam()) {
+    <section class="dashboard-section">
+      <h2>{{ selectedTeam()!.name }} — Members</h2>
+      <form class="invite-form" (ngSubmit)="addUserToTeam()">
+        <select
+          [ngModel]="addTeamUserId()"
+          (ngModelChange)="addTeamUserId.set($event)"
+          name="addTeamUserId"
+        >
+          <option value="">Select a member…</option>
+          @for (user of users(); track user.id) {
+            <option [value]="user.id">{{ user.email }}</option>
+          }
+        </select>
+        <button type="submit" class="btn btn-primary">Add to team</button>
+      </form>
+      @if (teamMembers().length === 0) {
+        <p class="empty-state">No members in this team.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr><th>Email</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (member of teamMembers(); track member.id) {
+              <tr>
+                <td>{{ member.email }}</td>
+                <td>
+                  <button class="btn-danger" (click)="removeUserFromTeam(member.id)">Remove</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
   }
   }
 
