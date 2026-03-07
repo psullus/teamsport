@@ -260,4 +260,24 @@ describe('ProfileMenu', () => {
     expect(helpItem?.getAttribute('href')).toBe('/help');
   });
 
+  it('should show initials when user has no avatar', async () => {
+    authService._setUser({ ...defaultUser, avatarUrl: null });
+    const fixture = TestBed.createComponent(ProfileMenu);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.avatar-img')).toBeNull();
+    expect(el.querySelector('.avatar')?.textContent?.trim()).toBeTruthy();
+  });
+
+  it('should show profile image when user has an avatar', async () => {
+    authService._setUser({ ...defaultUser, avatarUrl: 'https://example.com/photo.jpg' });
+    const fixture = TestBed.createComponent(ProfileMenu);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const img = el.querySelector('.avatar-img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.src).toContain('https://example.com/photo.jpg');
+  });
 });

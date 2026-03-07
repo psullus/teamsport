@@ -175,6 +175,30 @@ describe('AuthService', () => {
         service.signup('Org', 'a@b.com', 'pass', 'Club', 'Touch', 'Team'),
       ).rejects.toThrow(ConflictException);
     });
+
+    it('should normalize email to lowercase on signup', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+      mockOrgRepo.create.mockReturnValue({ id: 'org-1', name: 'Org' });
+      mockOrgRepo.save.mockImplementation((e) => Promise.resolve(e));
+      mockUserRepo.create.mockReturnValue({
+        id: 'user-1', email: 'test@example.com', role: 'ADMIN',
+        emailVerified: false, organisation: { id: 'org-1', name: 'Org' },
+      });
+      mockUserRepo.save.mockImplementation((e) => Promise.resolve(e));
+      mockEmailTokenRepo.create.mockReturnValue({ token: 'tok' });
+      mockClubRepo.create.mockReturnValue({ id: 'club-1', name: 'Club', type: 'Touch' });
+      mockClubRepo.save.mockImplementation((e) => Promise.resolve(e));
+      mockClubMemberRepo.create.mockReturnValue({ id: 'cm-1' });
+      mockClubMemberRepo.save.mockImplementation((e) => Promise.resolve(e));
+      mockTeamRepo.create.mockReturnValue({ id: 'team-1', name: 'Team' });
+      mockTeamRepo.save.mockImplementation((e) => Promise.resolve(e));
+
+      await service.signup('Org', 'Test@Example.COM', 'pass', 'Club', 'Touch', 'Team');
+
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+      });
+    });
   });
 
   describe('login', () => {
@@ -182,6 +206,17 @@ describe('AuthService', () => {
       mockUserRepo.findOne.mockResolvedValue(null);
 
       await expect(service.login('no@user.com', 'pass')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should normalize email to lowercase on login', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.login('Test@Example.COM', 'pass')).rejects.toThrow(UnauthorizedException);
+
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+        relations: ['organisation'],
+      });
     });
 
     it('should throw UnauthorizedException if password is wrong', async () => {

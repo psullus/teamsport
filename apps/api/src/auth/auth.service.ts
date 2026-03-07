@@ -62,12 +62,13 @@ export class AuthService {
 
   async signup(
     organisationName: string,
-    email: string,
+    rawEmail: string,
     password: string,
     clubName: string,
     clubType: string,
     teamName: string,
   ): Promise<{ user: User; token: string }> {
+    const email = rawEmail.toLowerCase();
     const existing = await this.userRepo.findOne({ where: { email } });
     if (existing) {
       throw new ConflictException('Email already registered');
@@ -102,7 +103,8 @@ export class AuthService {
     return { user: toUserResponse(user), token: jwt };
   }
 
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+  async login(rawEmail: string, password: string): Promise<{ user: User; token: string }> {
+    const email = rawEmail.toLowerCase();
     const user = await this.userRepo.findOne({
       where: { email },
       relations: ['organisation'],

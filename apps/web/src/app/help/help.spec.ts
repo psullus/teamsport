@@ -55,6 +55,7 @@ describe('Help', () => {
     expect(headings).toContain('Organisations');
     expect(headings).toContain('Clubs & Teams');
     expect(headings).toContain('Leagues');
+    expect(headings).toContain('Events');
     expect(headings).toContain('Roles & Permissions');
   });
 

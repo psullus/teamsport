@@ -1,13 +1,24 @@
 @if (isLoggedIn()) {
   <div class="profile-menu">
-    <button
-      class="avatar"
-      (click)="toggle($event)"
-      [attr.aria-expanded]="isOpen()"
-      aria-haspopup="true"
-    >
-      {{ userInitials() }}
-    </button>
+    @if (user()?.avatarUrl) {
+      <button
+        class="avatar avatar--img"
+        (click)="toggle($event)"
+        [attr.aria-expanded]="isOpen()"
+        aria-haspopup="true"
+      >
+        <img [src]="user()!.avatarUrl!" alt="Profile" class="avatar-img" />
+      </button>
+    } @else {
+      <button
+        class="avatar"
+        (click)="toggle($event)"
+        [attr.aria-expanded]="isOpen()"
+        aria-haspopup="true"
+      >
+        {{ userInitials() }}
+      </button>
+    }
 
     @if (isOpen()) {
       <div class="dropdown" (click)="$event.stopPropagation()">
