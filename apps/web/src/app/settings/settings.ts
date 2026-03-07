@@ -1,9 +1,9 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   AuthService, POSITIONS_BY_SPORT,
-  type ClubMembership, type SportType,
+  type ClubMembership, type ClubWithTeams, type SportType,
 } from '../services/auth.service';
 
 @Component({
@@ -22,6 +22,8 @@ export class Settings implements OnInit {
   error = signal('');
   saving = signal(false);
   memberships = signal<ClubMembership[]>([]);
+  myClubs = signal<ClubWithTeams[]>([]);
+  hasTeams = computed(() => this.myClubs().some(c => c.teams.length > 0));
 
   constructor(private authService: AuthService) {}
 
@@ -34,6 +36,7 @@ export class Settings implements OnInit {
       this.avatarPreview.set(user.avatarUrl);
     }
     this.loadMemberships();
+    this.loadMyClubs();
   }
 
   async loadMemberships() {
@@ -41,6 +44,14 @@ export class Settings implements OnInit {
       this.memberships.set(await this.authService.listMyMemberships());
     } catch {
       this.memberships.set([]);
+    }
+  }
+
+  async loadMyClubs() {
+    try {
+      this.myClubs.set(await this.authService.listMyClubs());
+    } catch {
+      this.myClubs.set([]);
     }
   }
 

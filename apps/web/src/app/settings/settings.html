@@ -97,6 +97,20 @@
       </div>
     }
 
+    @if (hasTeams()) {
+      <div class="teams-section">
+        <h2>Your teams</h2>
+        @for (club of myClubs(); track club.id) {
+          @if (club.teams.length > 0) {
+            <div class="team-club-label">{{ club.name }}</div>
+            @for (team of club.teams; track team.id) {
+              <div class="team-name">{{ team.name }}</div>
+            }
+          }
+        }
+      </div>
+    }
+
     <p class="auth-footer"><a routerLink="/">Back to home</a></p>
   </div>
 </div>

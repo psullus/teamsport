@@ -1,15 +1,19 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { Login } from './login';
 
 describe('Login', () => {
-  let authService: { login: ReturnType<typeof vi.fn> };
+  let authService: { login: ReturnType<typeof vi.fn>; isLoggedIn: ReturnType<typeof signal> };
 
   beforeEach(async () => {
-    authService = { login: vi.fn().mockResolvedValue(undefined) };
+    authService = {
+      login: vi.fn().mockResolvedValue(undefined),
+      isLoggedIn: signal(false),
+    };
     await TestBed.configureTestingModule({
       imports: [Login],
       providers: [
@@ -59,5 +63,15 @@ describe('Login', () => {
     await fixture.whenStable();
     const link = fixture.nativeElement.querySelector('.auth-footer a') as HTMLAnchorElement;
     expect(link.textContent).toContain('Sign up');
+  });
+
+  it('should redirect to home when already logged in', async () => {
+    const router = TestBed.inject(Router);
+    const navSpy = vi.spyOn(router, 'navigateByUrl');
+    authService.isLoggedIn.set(true);
+    const fixture = TestBed.createComponent(Login);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(navSpy).toHaveBeenCalledWith('/');
   });
 });

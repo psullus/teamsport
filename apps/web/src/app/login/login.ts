@@ -1,6 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -13,8 +13,19 @@ export class Login {
   email = '';
   password = '';
   error = signal('');
+  showPassword = signal(false);
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private router: Router) {
+    effect(() => {
+      if (this.authService.isLoggedIn()) {
+        this.router.navigateByUrl('/');
+      }
+    });
+  }
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
+  }
 
   async onSubmit() {
     this.error.set('');
