@@ -613,14 +613,8 @@
           name="fixtureHomeId"
         >
           <option value="">Home…</option>
-          @if (selectedLeague()!.type === 'club') {
-            @for (club of clubs(); track club.id) {
-              <option [value]="club.id">{{ club.name }}</option>
-            }
-          } @else {
-            @for (team of teams(); track team.id) {
-              <option [value]="team.id">{{ team.name }}</option>
-            }
+          @for (p of leagueDetail()!.participants; track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
           }
         </select>
         <select
@@ -629,14 +623,8 @@
           name="fixtureAwayId"
         >
           <option value="">Away…</option>
-          @if (selectedLeague()!.type === 'club') {
-            @for (club of clubs(); track club.id) {
-              <option [value]="club.id">{{ club.name }}</option>
-            }
-          } @else {
-            @for (team of teams(); track team.id) {
-              <option [value]="team.id">{{ team.name }}</option>
-            }
+          @for (p of leagueDetail()!.participants; track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
           }
         </select>
         <input
