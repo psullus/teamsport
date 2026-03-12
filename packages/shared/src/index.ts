@@ -21,12 +21,12 @@ export const SPORT_TYPES = [
 export type SportType = (typeof SPORT_TYPES)[number];
 
 export const POSITIONS_BY_SPORT: Record<SportType, string[]> = {
-  Touch: ['Middle', 'Link', 'Wing', 'Sub'],
-  Soccer: ['Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Sub'],
-  Football: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward', 'Sub'],
-  Hurling: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward', 'Sub'],
-  Camogie: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward', 'Sub'],
-  Rugby: ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number 8', 'Scrum-half', 'Fly-half', 'Centre', 'Wing', 'Fullback', 'Sub'],
+  Touch: ['Middle', 'Link', 'Wing'],
+  Soccer: ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'],
+  Football: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward'],
+  Hurling: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward'],
+  Camogie: ['Goalkeeper', 'Full-back', 'Half-back', 'Midfielder', 'Half-forward', 'Full-forward'],
+  Rugby: ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number 8', 'Scrum-half', 'Fly-half', 'Centre', 'Wing', 'Fullback'],
 };
 
 export interface Organisation {
@@ -149,6 +149,33 @@ export interface Event {
   location: string | null;
   description: string | null;
   organisationId: string;
+  createdAt: string;
+}
+
+export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
+export type JoinRequestTargetType = 'club' | 'team';
+export type NotificationType = 'join_request' | 'join_request_approved' | 'join_request_rejected';
+
+export interface JoinRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  targetType: JoinRequestTargetType;
+  targetId: string;
+  targetName: string;
+  status: JoinRequestStatus;
+  createdAt: string;
+  respondedAt: string | null;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  message: string;
+  type: NotificationType;
+  read: boolean;
+  referenceId: string | null;
   createdAt: string;
 }
 

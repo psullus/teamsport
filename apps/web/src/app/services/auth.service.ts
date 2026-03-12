@@ -6,7 +6,7 @@ import { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
 import type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
   League, LeagueDetail, Fixture, Goal, SportType, ClubMembership,
-  Event,
+  Event, JoinRequest, Notification,
 } from '@teamsport/shared';
 
 export { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
@@ -14,7 +14,8 @@ export type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
   League, LeagueDetail, LeagueType, FixtureStatus, Fixture, Goal,
   ScorerFixture, StandingsRow, TopScorer, SportType, ClubMembership,
-  Event,
+  Event, JoinRequest, JoinRequestStatus, JoinRequestTargetType,
+  Notification, NotificationType,
 } from '@teamsport/shared';
 
 interface AuthResponse {
@@ -24,8 +25,10 @@ interface AuthResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private currentUser = signal<User | null>(null);
+  private _unreadCount = signal(0);
 
   readonly user = this.currentUser.asReadonly();
+  readonly unreadNotificationCount = this._unreadCount.asReadonly();
   readonly isLoggedIn = computed(() => this.currentUser() !== null);
   readonly isControl = computed(() => this.currentUser()?.role === ROLES.CONTROL);
   readonly isAdmin = computed(() => this.currentUser()?.role === ROLES.ADMIN);
@@ -100,15 +103,21 @@ export class AuthService {
     );
   }
 
-  async inviteUser(email: string): Promise<void> {
-    await firstValueFrom(
-      this.http.post('/api/auth/invites', { email }),
+  async inviteUser(email: string): Promise<{ token: string }> {
+    return firstValueFrom(
+      this.http.post<{ token: string }>('/api/auth/invites', { email }),
     );
   }
 
   async listOrgUsers(): Promise<User[]> {
     return firstValueFrom(
       this.http.get<User[]>('/api/auth/org/users'),
+    );
+  }
+
+  async deleteInvite(inviteId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`/api/auth/invites/${inviteId}`),
     );
   }
 
@@ -333,9 +342,81 @@ export class AuthService {
     await firstValueFrom(this.http.delete(`/api/auth/events/${id}`));
   }
 
+  // --- Join request & notification methods ---
+
+  async listOrgClubs(): Promise<Club[]> {
+    return firstValueFrom(this.http.get<Club[]>('/api/auth/org/clubs'));
+  }
+
+  async listOrgClubTeams(clubId: string): Promise<Team[]> {
+    return firstValueFrom(this.http.get<Team[]>(`/api/auth/org/clubs/${clubId}/teams`));
+  }
+
+  async createJoinRequest(targetType: string, targetId: string): Promise<JoinRequest> {
+    return firstValueFrom(
+      this.http.post<JoinRequest>('/api/auth/join-requests', { targetType, targetId }),
+    );
+  }
+
+  async listMyJoinRequests(): Promise<JoinRequest[]> {
+    return firstValueFrom(this.http.get<JoinRequest[]>('/api/auth/join-requests/me'));
+  }
+
+  async listPendingJoinRequests(): Promise<JoinRequest[]> {
+    return firstValueFrom(this.http.get<JoinRequest[]>('/api/auth/join-requests/pending'));
+  }
+
+  async respondToJoinRequest(id: string, status: string): Promise<JoinRequest> {
+    return firstValueFrom(
+      this.http.patch<JoinRequest>(`/api/auth/join-requests/${id}`, { status }),
+    );
+  }
+
+  async listNotifications(): Promise<Notification[]> {
+    return firstValueFrom(this.http.get<Notification[]>('/api/auth/notifications'));
+  }
+
+  async loadUnreadCount(): Promise<void> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ count: number }>('/api/auth/notifications/count'),
+      );
+      this._unreadCount.set(res.count);
+    } catch {
+      this._unreadCount.set(0);
+    }
+  }
+
+  async markNotificationRead(id: string): Promise<void> {
+    await firstValueFrom(
+      this.http.patch(`/api/auth/notifications/${id}/read`, {}),
+    );
+    this._unreadCount.update((c) => Math.max(0, c - 1));
+  }
+
+  async markAllNotificationsRead(): Promise<void> {
+    await firstValueFrom(
+      this.http.post('/api/auth/notifications/read-all', {}),
+    );
+    this._unreadCount.set(0);
+  }
+
   async resendVerification(): Promise<void> {
     await firstValueFrom(
       this.http.post('/api/auth/resend-verification', {}),
+    );
+  }
+
+  async forgotPassword(email: string): Promise<string | null> {
+    const res = await firstValueFrom(
+      this.http.post<{ success: boolean; resetLink?: string }>('/api/auth/forgot-password', { email }),
+    );
+    return res.resetLink ?? null;
+  }
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post('/api/auth/reset-password', { token, password }),
     );
   }
 
@@ -351,6 +432,7 @@ export class AuthService {
       catchError(() => EMPTY),
     ).subscribe((user) => {
       this.currentUser.set(user);
+      this.loadUnreadCount();
     });
   }
 }

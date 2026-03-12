@@ -92,12 +92,48 @@
     } @else {
       <ul class="invite-list">
         @for (invite of invites(); track invite.id) {
-          <li>
-            {{ invite.email }}
-            <span class="invite-date">{{ invite.createdAt | date:'d MMM y' }}</span>
+          <li class="list-item-row">
+            <span>
+              {{ invite.email }}
+              <span class="invite-date">{{ invite.createdAt | date:'d MMM y' }}</span>
+            </span>
+            <button class="btn-danger" (click)="deleteInvite(invite.id)">Cancel</button>
           </li>
         }
       </ul>
+    }
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Join requests</h2>
+    @if (pendingJoinRequests().length === 0) {
+      <p class="empty-state">No pending join requests.</p>
+    } @else {
+      <table class="data-table join-requests-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Wants to join</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (req of pendingJoinRequests(); track req.id) {
+            <tr>
+              <td>{{ req.userName }} ({{ req.userEmail }})</td>
+              <td>{{ req.targetName }}</td>
+              <td>{{ req.targetType }}</td>
+              <td>{{ req.createdAt | date:'d MMM y' }}</td>
+              <td>
+                <button class="btn btn-primary btn-sm" (click)="approveJoinRequest(req.id)">Approve</button>
+                <button class="btn-danger btn-sm" (click)="rejectJoinRequest(req.id)">Reject</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     }
   </section>
   }

@@ -493,6 +493,10 @@ describe('AuthService (session restore)', () => {
       role: 'ADMIN',
     });
 
+    // restoreSession now also loads unread notification count
+    const countReq = httpTesting.expectOne('/api/auth/notifications/count');
+    countReq.flush({ count: 2 });
+
     expect(service.isLoggedIn()).toBe(true);
     expect(service.user()?.organisationName).toBe('Restored Org');
   });

@@ -1,0 +1,33 @@
+@if (auth.isLoggedIn()) {
+  <div class="bell-wrapper">
+    <button class="bell-btn" (click)="toggle()" aria-label="Notifications">
+      <span class="material-symbols-outlined">notifications</span>
+      @if (auth.unreadNotificationCount() > 0) {
+        <span class="badge">{{ auth.unreadNotificationCount() }}</span>
+      }
+    </button>
+
+    @if (open()) {
+      <div class="dropdown">
+        <div class="dropdown-header">
+          <span>Notifications</span>
+          @if (notifications().length > 0) {
+            <button class="mark-all-btn" (click)="markAllRead()">Mark all read</button>
+          }
+        </div>
+        @if (notifications().length === 0) {
+          <p class="dropdown-empty">No unread notifications</p>
+        } @else {
+          <ul class="notification-list">
+            @for (n of notifications(); track n.id) {
+              <li class="notification-item">
+                <span class="notification-message">{{ n.message }}</span>
+                <button class="dismiss-btn" (click)="dismiss(n.id)" aria-label="Dismiss">&times;</button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  </div>
+}

@@ -102,6 +102,17 @@ function createAuthService(loggedIn: boolean) {
     listLeagues: vi.fn().mockResolvedValue(mockLeagues),
     getLeagueDetail: vi.fn().mockResolvedValue(mockLeagueDetail),
     listEvents: vi.fn().mockResolvedValue(mockEvents),
+    listOrgClubs: vi.fn().mockResolvedValue([
+      { id: 'club-1', name: 'Club A', type: 'Touch', organisationId: 'org-1' },
+    ]),
+    listOrgClubTeams: vi.fn().mockResolvedValue([
+      { id: 'team-1', name: 'Team A1', clubId: 'club-1' },
+    ]),
+    listMyJoinRequests: vi.fn().mockResolvedValue([]),
+    createJoinRequest: vi.fn().mockResolvedValue({
+      id: 'jr-1', targetType: 'club', targetId: 'club-1',
+      targetName: 'Club A', status: 'pending',
+    }),
   };
 }
 
@@ -315,15 +326,41 @@ describe('Home (logged in)', () => {
     expect(cards[0].textContent).toContain('Team B1');
   });
 
-  it('should show empty state when user has no clubs', async () => {
+  it('should show browse UI when user has no clubs', async () => {
     authService.listMyClubs.mockResolvedValue([]);
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.dashboard-empty')).toBeTruthy();
-    expect(el.textContent).toContain('not a member of any clubs');
+    expect(el.querySelector('.browse-section')).toBeTruthy();
+    expect(el.textContent).toContain('Available clubs');
+    expect(authService.listOrgClubs).toHaveBeenCalled();
+    expect(authService.listMyJoinRequests).toHaveBeenCalled();
+  });
+
+  it('should show pending requests in browse view', async () => {
+    authService.listMyClubs.mockResolvedValue([]);
+    authService.listMyJoinRequests.mockResolvedValue([
+      {
+        id: 'jr-1', targetType: 'club', targetId: 'club-1',
+        targetName: 'Club A', status: 'pending', userId: 'u1',
+        userName: 'John', userEmail: 'j@e.com',
+        createdAt: '2026-03-10T00:00:00.000Z', respondedAt: null,
+      },
+    ]);
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    // Wait for the effect to run loadClubs, then for loadBrowseData to complete
+    await fixture.whenStable();
+    fixture.detectChanges();
+    // loadBrowseData fires from within loadClubs, need another settle
+    await new Promise((r) => setTimeout(r, 0));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.pending-requests-list')).toBeTruthy();
+    expect(el.textContent).toContain('Club A');
   });
 
   it('should show team members when a team card is clicked', async () => {

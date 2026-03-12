@@ -40,6 +40,9 @@ describe('AdminDashboard', () => {
     createEvent: ReturnType<typeof vi.fn>;
     updateEvent: ReturnType<typeof vi.fn>;
     deleteEvent: ReturnType<typeof vi.fn>;
+    deleteInvite: ReturnType<typeof vi.fn>;
+    listPendingJoinRequests: ReturnType<typeof vi.fn>;
+    respondToJoinRequest: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -51,7 +54,7 @@ describe('AdminDashboard', () => {
       listInvites: vi.fn().mockResolvedValue([
         { id: 'inv-1', email: 'pending@test.com' },
       ]),
-      inviteUser: vi.fn().mockResolvedValue(undefined),
+      inviteUser: vi.fn().mockResolvedValue({ token: 'test-token' }),
       listClubs: vi.fn().mockResolvedValue([
         { id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' },
       ]),
@@ -121,6 +124,17 @@ describe('AdminDashboard', () => {
       createEvent: vi.fn().mockResolvedValue({ id: 'event-2', title: 'Match' }),
       updateEvent: vi.fn().mockResolvedValue({ id: 'event-1', title: 'Updated Training' }),
       deleteEvent: vi.fn().mockResolvedValue(undefined),
+      deleteInvite: vi.fn().mockResolvedValue(undefined),
+      listPendingJoinRequests: vi.fn().mockResolvedValue([
+        {
+          id: 'jr-1', userId: 'u2', userName: 'Jane Doe', userEmail: 'jane@test.com',
+          targetType: 'club', targetId: 'club-1', targetName: 'Club A',
+          status: 'pending', createdAt: '2026-03-10T00:00:00.000Z', respondedAt: null,
+        },
+      ]),
+      respondToJoinRequest: vi.fn().mockResolvedValue({
+        id: 'jr-1', status: 'approved',
+      }),
     };
     await TestBed.configureTestingModule({
       imports: [AdminDashboard],
@@ -152,7 +166,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const rows = el.querySelectorAll('.data-table tbody tr');
+    const rows = el.querySelectorAll('.data-table:not(.join-requests-table) tbody tr');
     expect(rows.length).toBe(2);
     expect(rows[0].textContent).toContain('admin@test.com');
     expect(rows[0].textContent).toContain('ADMIN');
@@ -480,6 +494,16 @@ describe('AdminDashboard', () => {
     expect(el.querySelector('h2')?.textContent).toContain('Teams');
   });
 
+  it('should delete a pending invite', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.deleteInvite('inv-1');
+    expect(authService.deleteInvite).toHaveBeenCalledWith('inv-1');
+    expect(authService.listInvites).toHaveBeenCalled();
+  });
+
   it('should create a team from the Teams tab', async () => {
     const fixture = TestBed.createComponent(AdminDashboard);
     fixture.detectChanges();
@@ -491,5 +515,45 @@ describe('AdminDashboard', () => {
     expect(authService.createTeam).toHaveBeenCalledWith('New Team', 'club-1');
     expect(component.teamName()).toBe('');
     expect(component.teamClubId()).toBe('');
+  });
+
+  it('should load pending join requests on init', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(authService.listPendingJoinRequests).toHaveBeenCalled();
+    expect(fixture.componentInstance.pendingJoinRequests()).toHaveLength(1);
+  });
+
+  it('should approve a join request', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.approveJoinRequest('jr-1');
+    expect(authService.respondToJoinRequest).toHaveBeenCalledWith('jr-1', 'approved');
+    expect(authService.listPendingJoinRequests).toHaveBeenCalled();
+  });
+
+  it('should reject a join request', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.rejectJoinRequest('jr-1');
+    expect(authService.respondToJoinRequest).toHaveBeenCalledWith('jr-1', 'rejected');
+    expect(authService.listPendingJoinRequests).toHaveBeenCalled();
+  });
+
+  it('should display join requests table in members tab', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const table = el.querySelector('.join-requests-table');
+    expect(table).toBeTruthy();
+    expect(table?.textContent).toContain('Jane Doe');
+    expect(table?.textContent).toContain('Club A');
   });
 });

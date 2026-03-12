@@ -11,11 +11,14 @@ import { ClubService } from './club.service';
 import { TeamService } from './team.service';
 import { LeagueService } from './league.service';
 import { EventService } from './event.service';
+import { JoinRequestService } from './join-request.service';
+import { NotificationService } from './notification.service';
 import { S3Service } from './s3.service';
 import { EmailService } from './email.service';
 import { UserEntity } from './entities/user.entity';
 import { OrganisationEntity } from './entities/organisation.entity';
 import { EmailVerificationTokenEntity } from './entities/email-verification-token.entity';
+import { PasswordResetTokenEntity } from './entities/password-reset-token.entity';
 import { InviteEntity } from './entities/invite.entity';
 import { ClubEntity } from './entities/club.entity';
 import { ClubMemberEntity } from './entities/club-member.entity';
@@ -24,6 +27,8 @@ import { LeagueEntity } from './entities/league.entity';
 import { FixtureEntity } from './entities/fixture.entity';
 import { GoalEntity } from './entities/goal.entity';
 import { EventEntity } from './entities/event.entity';
+import { JoinRequestEntity } from './entities/join-request.entity';
+import { NotificationEntity } from './entities/notification.entity';
 
 @Module({
   imports: [
@@ -31,6 +36,7 @@ import { EventEntity } from './entities/event.entity';
       UserEntity,
       OrganisationEntity,
       EmailVerificationTokenEntity,
+      PasswordResetTokenEntity,
       InviteEntity,
       ClubEntity,
       ClubMemberEntity,
@@ -39,6 +45,8 @@ import { EventEntity } from './entities/event.entity';
       FixtureEntity,
       GoalEntity,
       EventEntity,
+      JoinRequestEntity,
+      NotificationEntity,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -52,7 +60,8 @@ import { EventEntity } from './entities/event.entity';
   controllers: [AuthController],
   providers: [
     AuthService, UserService, OrganisationService, InviteService,
-    ClubService, TeamService, LeagueService, EventService, S3Service, EmailService,
+    ClubService, TeamService, LeagueService, EventService,
+    JoinRequestService, NotificationService, S3Service, EmailService,
   ],
   exports: [AuthService],
 })

@@ -16,6 +16,12 @@
   align-items: center;
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .wordmark {
   font-size: 1.125rem;
   font-weight: 600;

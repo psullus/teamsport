@@ -22,6 +22,8 @@ import { ClubService } from './club.service';
 import { TeamService } from './team.service';
 import { LeagueService } from './league.service';
 import { EventService } from './event.service';
+import { JoinRequestService } from './join-request.service';
+import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -42,6 +44,10 @@ import { UpdateFixtureDto } from './dto/update-fixture.dto';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CreateJoinRequestDto } from './dto/create-join-request.dto';
+import { RespondJoinRequestDto } from './dto/respond-join-request.dto';
 import { ROLES } from '@teamsport/shared';
 import { setTokenCookie, clearTokenCookie } from './cookie.utils';
 
@@ -56,6 +62,8 @@ export class AuthController {
     private teamService: TeamService,
     private leagueService: LeagueService,
     private eventService: EventService,
+    private joinRequestService: JoinRequestService,
+    private notificationService: NotificationService,
   ) {}
 
   @Post('signup')
@@ -142,6 +150,18 @@ export class AuthController {
     return { success: true };
   }
 
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    const resetLink = await this.authService.forgotPassword(dto.email);
+    return { success: true, ...(resetLink ? { resetLink } : {}) };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.password);
+    return { success: true };
+  }
+
   @Post('invites')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)
@@ -155,6 +175,14 @@ export class AuthController {
       '',
     );
     return { id: invite.id, email: invite.email, token: invite.token };
+  }
+
+  @Delete('invites/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async deleteInvite(@Param('id') id: string) {
+    await this.inviteService.deleteInvite(id);
+    return { success: true };
   }
 
   @Get('invites')
@@ -338,6 +366,88 @@ export class AuthController {
   @Roles(ROLES.ADMIN)
   async deleteTeam(@Param('id') id: string) {
     await this.teamService.delete(id);
+    return { success: true };
+  }
+
+  // --- Organisation browsing endpoints (any user) ---
+
+  @Get('org/clubs')
+  @UseGuards(JwtAuthGuard)
+  async listOrgClubs(@CurrentUser() currentUser: { id: string; role: string }) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.clubService.listByOrganisation(user.organisationId);
+  }
+
+  @Get('org/clubs/:id/teams')
+  @UseGuards(JwtAuthGuard)
+  async listOrgClubTeams(@Param('id') id: string) {
+    return this.teamService.listByClub(id);
+  }
+
+  // --- Join request endpoints ---
+
+  @Post('join-requests')
+  @UseGuards(JwtAuthGuard)
+  async createJoinRequest(
+    @Body() dto: CreateJoinRequestDto,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    return this.joinRequestService.create(currentUser.id, dto.targetType, dto.targetId);
+  }
+
+  @Get('join-requests/me')
+  @UseGuards(JwtAuthGuard)
+  async listMyJoinRequests(@CurrentUser() currentUser: { id: string; role: string }) {
+    return this.joinRequestService.listMyRequests(currentUser.id);
+  }
+
+  @Get('join-requests/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async listPendingJoinRequests(@CurrentUser() currentUser: { id: string; role: string }) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.joinRequestService.listPendingForOrganisation(user.organisationId);
+  }
+
+  @Patch('join-requests/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async respondToJoinRequest(
+    @Param('id') id: string,
+    @Body() dto: RespondJoinRequestDto,
+  ) {
+    return this.joinRequestService.respond(id, dto.status);
+  }
+
+  // --- Notification endpoints ---
+
+  @Get('notifications')
+  @UseGuards(JwtAuthGuard)
+  async listNotifications(@CurrentUser() currentUser: { id: string; role: string }) {
+    return this.notificationService.listUnread(currentUser.id);
+  }
+
+  @Get('notifications/count')
+  @UseGuards(JwtAuthGuard)
+  async countNotifications(@CurrentUser() currentUser: { id: string; role: string }) {
+    const count = await this.notificationService.countUnread(currentUser.id);
+    return { count };
+  }
+
+  @Patch('notifications/:id/read')
+  @UseGuards(JwtAuthGuard)
+  async markNotificationRead(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    await this.notificationService.markAsRead(id, currentUser.id);
+    return { success: true };
+  }
+
+  @Post('notifications/read-all')
+  @UseGuards(JwtAuthGuard)
+  async markAllNotificationsRead(@CurrentUser() currentUser: { id: string; role: string }) {
+    await this.notificationService.markAllAsRead(currentUser.id);
     return { success: true };
   }
 

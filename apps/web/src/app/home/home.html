@@ -38,8 +38,72 @@
           @if (activeView() === 'clubs') {
             <h2 class="clubs-heading">Clubs</h2>
             @if (clubs().length === 0) {
-              <div class="dashboard-empty">
-                <p>You are not a member of any clubs yet.</p>
+              <div class="browse-section">
+                @if (pendingRequests().length > 0) {
+                  <h3 class="browse-subheading">Your pending requests</h3>
+                  <ul class="pending-requests-list">
+                    @for (req of pendingRequests(); track req.id) {
+                      <li class="pending-request-item">
+                        <span>{{ req.targetName }} ({{ req.targetType }})</span>
+                        <span class="requested-pill">Requested</span>
+                      </li>
+                    }
+                  </ul>
+                }
+
+                <h3 class="browse-subheading">Available clubs &amp; teams</h3>
+                @if (availableClubs().length === 0) {
+                  <p class="teams-empty">No clubs available in your organisation.</p>
+                } @else {
+                  <div class="browse-clubs">
+                    @for (club of availableClubs(); track club.id) {
+                      <div class="browse-club-card">
+                        <div class="browse-club-header">
+                          <div>
+                            <h4 class="browse-club-name">{{ club.name }}</h4>
+                            <span class="sport-badge">{{ club.type }}</span>
+                          </div>
+                          <div class="browse-club-actions">
+                            @if (hasPendingRequest('club', club.id)) {
+                              <span class="requested-pill">Requested</span>
+                            } @else {
+                              <button
+                                class="btn btn-primary btn-sm"
+                                (click)="requestToJoin('club', club.id)"
+                                [disabled]="isRequestLoading('club', club.id)"
+                              >Request to join club</button>
+                            }
+                            <button class="btn btn-secondary btn-sm" (click)="toggleClubTeams(club.id)">
+                              {{ expandedClubs()[club.id] ? 'Hide' : 'Show' }} teams
+                            </button>
+                          </div>
+                        </div>
+                        @if (expandedClubs()[club.id]) {
+                          <div class="browse-teams">
+                            @if (!availableTeams()[club.id] || availableTeams()[club.id].length === 0) {
+                              <p class="teams-empty">No teams in this club.</p>
+                            } @else {
+                              @for (team of availableTeams()[club.id]; track team.id) {
+                                <div class="browse-team-row">
+                                  <span>{{ team.name }}</span>
+                                  @if (hasPendingRequest('team', team.id)) {
+                                    <span class="requested-pill">Requested</span>
+                                  } @else {
+                                    <button
+                                      class="btn btn-primary btn-sm"
+                                      (click)="requestToJoin('team', team.id)"
+                                      [disabled]="isRequestLoading('team', team.id)"
+                                    >Request to join</button>
+                                  }
+                                </div>
+                              }
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             } @else {
               <ul class="club-list">

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
   AuthService, User, Role, ROLES, Club, Team, SPORT_TYPES,
   type League, type LeagueDetail, type Fixture, type StandingsRow, type TopScorer,
-  type Event,
+  type Event, type JoinRequest,
 } from '../services/auth.service';
 
 @Component({
@@ -20,6 +20,8 @@ export class AdminDashboard implements OnInit {
   inviteError = signal('');
   users = signal<User[]>([]);
   invites = signal<any[]>([]);
+
+  pendingJoinRequests = signal<JoinRequest[]>([]);
 
   clubs = signal<Club[]>([]);
   selectedClub = signal<Club | null>(null);
@@ -97,6 +99,7 @@ export class AdminDashboard implements OnInit {
   ngOnInit() {
     this.loadUsers();
     this.loadInvites();
+    this.loadPendingJoinRequests();
     this.loadClubs().then(() => this.loadAllTeams());
     this.loadLeagues();
     this.loadEvents();
@@ -123,17 +126,42 @@ export class AdminDashboard implements OnInit {
     this.loadUsers();
   }
 
+  async deleteInvite(inviteId: string) {
+    await this.authService.deleteInvite(inviteId);
+    this.loadInvites();
+  }
+
   async sendInvite() {
     this.inviteSuccess.set('');
     this.inviteError.set('');
     try {
-      await this.authService.inviteUser(this.inviteEmail());
-      this.inviteSuccess.set(`Invite sent to ${this.inviteEmail()}`);
+      const email = this.inviteEmail();
+      const { token } = await this.authService.inviteUser(email);
+      const inviteLink = `${window.location.origin}/invite?token=${token}`;
+      this.inviteSuccess.set(`Invite sent to ${email}. Link: ${inviteLink}`);
       this.inviteEmail.set('');
       this.loadInvites();
     } catch (err: any) {
       this.inviteError.set(err?.error?.message || 'Failed to send invite.');
     }
+  }
+
+  async loadPendingJoinRequests() {
+    try {
+      this.pendingJoinRequests.set(await this.authService.listPendingJoinRequests());
+    } catch {
+      this.pendingJoinRequests.set([]);
+    }
+  }
+
+  async approveJoinRequest(id: string) {
+    await this.authService.respondToJoinRequest(id, 'approved');
+    this.loadPendingJoinRequests();
+  }
+
+  async rejectJoinRequest(id: string) {
+    await this.authService.respondToJoinRequest(id, 'rejected');
+    this.loadPendingJoinRequests();
   }
 
   async loadClubs() {

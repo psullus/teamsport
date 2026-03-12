@@ -10,6 +10,8 @@ import { ClubService } from './club.service';
 import { TeamService } from './team.service';
 import { LeagueService } from './league.service';
 import { EventService } from './event.service';
+import { JoinRequestService } from './join-request.service';
+import { NotificationService } from './notification.service';
 
 const mockUser = {
   id: 'user-1',
@@ -146,6 +148,20 @@ const mockEventService = {
   delete: vi.fn().mockResolvedValue(undefined),
 };
 
+const mockJoinRequestService = {
+  create: vi.fn().mockResolvedValue({ id: 'jr-1', status: 'pending' }),
+  listMyRequests: vi.fn().mockResolvedValue([]),
+  listPendingForOrganisation: vi.fn().mockResolvedValue([]),
+  respond: vi.fn().mockResolvedValue({ id: 'jr-1', status: 'approved' }),
+};
+
+const mockNotificationService = {
+  listUnread: vi.fn().mockResolvedValue([]),
+  countUnread: vi.fn().mockResolvedValue(0),
+  markAsRead: vi.fn().mockResolvedValue(undefined),
+  markAllAsRead: vi.fn().mockResolvedValue(undefined),
+};
+
 const mockJwtService = {
   sign: vi.fn(() => 'jwt'),
   verifyAsync: vi.fn(),
@@ -170,6 +186,8 @@ describe('AuthController', () => {
         { provide: TeamService, useValue: mockTeamService },
         { provide: LeagueService, useValue: mockLeagueService },
         { provide: EventService, useValue: mockEventService },
+        { provide: JoinRequestService, useValue: mockJoinRequestService },
+        { provide: NotificationService, useValue: mockNotificationService },
         { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
