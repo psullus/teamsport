@@ -6,16 +6,16 @@ import { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
 import type {
   Role, Organisation, User, Club, Team, ClubWithTeams,
   League, LeagueDetail, Fixture, Goal, SportType, ClubMembership,
-  Event, JoinRequest, Notification,
+  Event, JoinRequest, Notification, CarouselImage,
 } from '@teamsport/shared';
 
 export { ROLES, SPORT_TYPES, POSITIONS_BY_SPORT } from '@teamsport/shared';
 export type {
-  Role, Organisation, User, Club, Team, ClubWithTeams,
+  Role, Organisation, User, Sex, Club, Team, ClubWithTeams,
   League, LeagueDetail, LeagueType, FixtureStatus, Fixture, Goal,
   ScorerFixture, StandingsRow, TopScorer, SportType, ClubMembership,
   Event, JoinRequest, JoinRequestStatus, JoinRequestTargetType,
-  Notification, NotificationType,
+  Notification, NotificationType, CarouselImage,
 } from '@teamsport/shared';
 
 interface AuthResponse {
@@ -106,6 +106,27 @@ export class AuthService {
   async inviteUser(email: string): Promise<{ token: string }> {
     return firstValueFrom(
       this.http.post<{ token: string }>('/api/auth/invites', { email }),
+    );
+  }
+
+  async createMember(data: { email?: string; firstName?: string; lastName?: string; sex?: string }): Promise<User> {
+    return firstValueFrom(
+      this.http.post<User>('/api/auth/org/members', data),
+    );
+  }
+
+  async updateOrgUser(
+    id: string,
+    data: { email?: string; firstName?: string; lastName?: string; sex?: string },
+  ): Promise<User> {
+    return firstValueFrom(
+      this.http.patch<User>(`/api/auth/org/users/${id}`, data),
+    );
+  }
+
+  async deleteOrgUser(id: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`/api/auth/org/users/${id}`),
     );
   }
 
@@ -417,6 +438,30 @@ export class AuthService {
   async resetPassword(token: string, password: string): Promise<void> {
     await firstValueFrom(
       this.http.post('/api/auth/reset-password', { token, password }),
+    );
+  }
+
+  async getHomeContent(): Promise<{ message: string | null; images: CarouselImage[] }> {
+    return firstValueFrom(
+      this.http.get<{ message: string | null; images: CarouselImage[] }>('/api/auth/home-content'),
+    );
+  }
+
+  async updateHomeMessage(message: string | null): Promise<{ success: boolean }> {
+    return firstValueFrom(
+      this.http.patch<{ success: boolean }>('/api/auth/home-content/message', { message }),
+    );
+  }
+
+  async uploadCarouselImage(formData: FormData): Promise<CarouselImage> {
+    return firstValueFrom(
+      this.http.post<CarouselImage>('/api/auth/home-content/images', formData),
+    );
+  }
+
+  async deleteCarouselImage(id: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`/api/auth/home-content/images/${id}`),
     );
   }
 

@@ -12,6 +12,7 @@ import { LeagueService } from './league.service';
 import { EventService } from './event.service';
 import { JoinRequestService } from './join-request.service';
 import { NotificationService } from './notification.service';
+import { HomeContentService } from './home-content.service';
 
 const mockUser = {
   id: 'user-1',
@@ -162,6 +163,13 @@ const mockNotificationService = {
   markAllAsRead: vi.fn().mockResolvedValue(undefined),
 };
 
+const mockHomeContentService = {
+  getHomeContent: vi.fn().mockResolvedValue({ message: 'Welcome', images: [] }),
+  updateMessage: vi.fn().mockResolvedValue({ success: true }),
+  addImage: vi.fn().mockResolvedValue({ id: 'img-1', url: 'https://example.com/img.jpg', sortOrder: 0 }),
+  deleteImage: vi.fn().mockResolvedValue(undefined),
+};
+
 const mockJwtService = {
   sign: vi.fn(() => 'jwt'),
   verifyAsync: vi.fn(),
@@ -188,6 +196,7 @@ describe('AuthController', () => {
         { provide: EventService, useValue: mockEventService },
         { provide: JoinRequestService, useValue: mockJoinRequestService },
         { provide: NotificationService, useValue: mockNotificationService },
+        { provide: HomeContentService, useValue: mockHomeContentService },
         { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();

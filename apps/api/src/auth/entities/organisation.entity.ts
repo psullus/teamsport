@@ -23,6 +23,9 @@ export class OrganisationEntity {
   @OneToMany('ClubEntity', 'organisation')
   clubs!: Relation<ClubEntity[]>;
 
+  @Column({ type: 'text', nullable: true })
+  homeMessage!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

@@ -5,6 +5,11 @@
     <nav class="sidebar">
       <button
         class="sidebar-btn"
+        [class.sidebar-btn--active]="activeTab() === 'home'"
+        (click)="setTab('home')"
+      >Home</button>
+      <button
+        class="sidebar-btn"
         [class.sidebar-btn--active]="activeTab() === 'members'"
         (click)="setTab('members')"
       >Members</button>
@@ -31,7 +36,87 @@
     </nav>
 
     <main class="dashboard-main">
+  @if (activeTab() === 'home') {
+  <section class="dashboard-section">
+    <h2>Welcome Message</h2>
+    <textarea
+      class="home-message-input"
+      [ngModel]="homeMessage()"
+      (ngModelChange)="homeMessage.set($event)"
+      name="homeMessage"
+      rows="4"
+      placeholder="Enter a welcome message for your members..."
+    ></textarea>
+    <button class="btn btn-primary" (click)="saveHomeMessage()" [disabled]="homeMessageSaving()">Save Message</button>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Carousel Images</h2>
+    <div class="carousel-upload">
+      <input type="file" accept="image/*" (change)="uploadCarouselImage($event)" />
+    </div>
+    @if (carouselUploadError()) {
+      <p class="error-text">{{ carouselUploadError() }}</p>
+    }
+    @if (carouselImages().length > 0) {
+      <div class="carousel-grid">
+        @for (img of carouselImages(); track img.id) {
+          <div class="carousel-grid-item">
+            <img [src]="img.url" alt="Carousel image" />
+            <button class="btn btn-danger btn-sm" (click)="deleteCarouselImage(img.id)">Delete</button>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="muted-text">No carousel images uploaded yet.</p>
+    }
+  </section>
+  }
+
   @if (activeTab() === 'members') {
+  <section class="dashboard-section">
+    <h2>Add a member</h2>
+    <form class="invite-form" (ngSubmit)="createMember()">
+      <input
+        type="text"
+        [ngModel]="memberFirstName()"
+        (ngModelChange)="memberFirstName.set($event)"
+        name="memberFirstName"
+        placeholder="First name"
+      />
+      <input
+        type="text"
+        [ngModel]="memberLastName()"
+        (ngModelChange)="memberLastName.set($event)"
+        name="memberLastName"
+        placeholder="Last name"
+      />
+      <input
+        type="email"
+        [ngModel]="memberEmail()"
+        (ngModelChange)="memberEmail.set($event)"
+        name="memberEmail"
+        placeholder="member@example.com (optional)"
+      />
+      <select
+        [ngModel]="memberSex()"
+        (ngModelChange)="memberSex.set($event)"
+        name="memberSex"
+      >
+        <option value="">Sex</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Add member</button>
+    </form>
+    @if (memberSuccess()) {
+      <p class="success-msg">{{ memberSuccess() }}</p>
+    }
+    @if (memberError()) {
+      <p class="error-msg">{{ memberError() }}</p>
+    }
+  </section>
+
   <section class="dashboard-section">
     <h2>Invite a member</h2>
     <form class="invite-form" (ngSubmit)="sendInvite()">
@@ -55,31 +140,113 @@
 
   <section class="dashboard-section">
     <h2>Members</h2>
+    <input
+      type="text"
+      [ngModel]="memberSearch()"
+      (ngModelChange)="memberSearch.set($event)"
+      name="memberSearch"
+      placeholder="Search members..."
+      class="search-input"
+    />
     <table class="data-table">
       <thead>
         <tr>
+          <th>Name</th>
           <th>Email</th>
           <th>Role</th>
           <th>Verified</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
-        @for (user of users(); track user.id) {
-          <tr>
-            <td>{{ user.email }}</td>
-            <td>
-              <select
-                [ngModel]="user.role"
-                (ngModelChange)="onRoleChange(user.id, $event)"
-                name="role"
-              >
-                @for (role of roles; track role) {
-                  <option [value]="role">{{ role }}</option>
+        @for (user of filteredUsers(); track user.id) {
+          @if (editingUserId() === user.id) {
+            <tr class="editing-row">
+              <td>
+                <input
+                  type="text"
+                  [ngModel]="editUserFirstName()"
+                  (ngModelChange)="editUserFirstName.set($event)"
+                  name="editUserFirstName"
+                  placeholder="First name"
+                  class="inline-input"
+                />
+                <input
+                  type="text"
+                  [ngModel]="editUserLastName()"
+                  (ngModelChange)="editUserLastName.set($event)"
+                  name="editUserLastName"
+                  placeholder="Last name"
+                  class="inline-input"
+                />
+              </td>
+              <td>
+                <input
+                  type="email"
+                  [ngModel]="editUserEmail()"
+                  (ngModelChange)="editUserEmail.set($event)"
+                  name="editUserEmail"
+                  placeholder="Email"
+                  class="inline-input"
+                />
+              </td>
+              <td>
+                <select
+                  [ngModel]="editUserSex()"
+                  (ngModelChange)="editUserSex.set($event)"
+                  name="editUserSex"
+                >
+                  <option value="">Sex</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </td>
+              <td colspan="2">
+                <button class="btn btn-primary btn-sm" (click)="saveUser()">Save</button>
+                <button class="btn-link" (click)="cancelEditUser()">Cancel</button>
+              </td>
+            </tr>
+          } @else {
+            <tr>
+              <td>{{ displayName(user) }}</td>
+              <td>{{ displayEmail(user) }}</td>
+              <td>
+                <select
+                  [ngModel]="user.role"
+                  (ngModelChange)="onRoleChange(user.id, $event)"
+                  name="role"
+                >
+                  @for (role of roles; track role) {
+                    <option [value]="role">{{ role }}</option>
+                  }
+                </select>
+              </td>
+              <td>{{ user.emailVerified ? 'Yes' : 'No' }}</td>
+              <td>
+                <span class="list-item-actions">
+                  <button class="btn-link" (click)="startEditUser(user)">Edit</button>
+                  @if (displayEmail(user)) {
+                    <button class="btn-link" (click)="sendMemberInvite(user)">Invite</button>
+                  }
+                  @if (confirmDeleteUserId() === user.id) {
+                    <span class="confirm-delete">
+                      Are you sure?
+                      <button class="btn-danger" (click)="deleteOrgUser(user.id)">Yes</button>
+                      <button class="btn-link" (click)="confirmDeleteUserId.set(null)">No</button>
+                    </span>
+                  } @else {
+                    <button class="btn-danger" (click)="confirmDeleteUserId.set(user.id)">Delete</button>
+                  }
+                </span>
+                @if (memberInviteSuccess()[user.id]) {
+                  <p class="success-msg">{{ memberInviteSuccess()[user.id] }}</p>
                 }
-              </select>
-            </td>
-            <td>{{ user.emailVerified ? 'Yes' : 'No' }}</td>
-          </tr>
+                @if (memberInviteError()[user.id]) {
+                  <p class="error-msg">{{ memberInviteError()[user.id] }}</p>
+                }
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
@@ -197,7 +364,15 @@
               <span class="sport-type-badge">{{ club.type }}</span>
               <span class="list-item-actions">
                 <button class="btn-link" (click)="startEditClub(club)">Edit</button>
-                <button class="btn-danger" (click)="deleteClub(club.id)">Delete</button>
+                @if (confirmDeleteClubId() === club.id) {
+                  <span class="confirm-delete">
+                    Are you sure?
+                    <button class="btn-danger" (click)="deleteClub(club.id)">Yes</button>
+                    <button class="btn-link" (click)="confirmDeleteClubId.set(null)">No</button>
+                  </span>
+                } @else {
+                  <button class="btn-danger" (click)="confirmDeleteClubId.set(club.id)">Delete</button>
+                }
               </span>
             }
           </li>
@@ -217,7 +392,7 @@
         >
           <option value="">Select a member…</option>
           @for (user of users(); track user.id) {
-            <option [value]="user.id">{{ user.email }}</option>
+            <option [value]="user.id">{{ displayMemberOption(user) }}</option>
           }
         </select>
         <button type="submit" class="btn btn-primary">Add to club</button>
@@ -227,12 +402,12 @@
       } @else {
         <table class="data-table">
           <thead>
-            <tr><th>Email</th><th></th></tr>
+            <tr><th>Member</th><th></th></tr>
           </thead>
           <tbody>
             @for (member of clubMembers(); track member.id) {
               <tr>
-                <td>{{ member.email }}</td>
+                <td>{{ displayMemberOption(member) }}</td>
                 <td>
                   <button class="btn-danger" (click)="removeUserFromClub(member.id)">Remove</button>
                 </td>
@@ -282,7 +457,15 @@
                 >{{ team.name }}</button>
                 <span class="list-item-actions">
                   <button class="btn-link" (click)="startEditTeam(team)">Edit</button>
-                  <button class="btn-danger" (click)="deleteTeam(team.id)">Delete</button>
+                  @if (confirmDeleteTeamId() === team.id) {
+                    <span class="confirm-delete">
+                      Are you sure?
+                      <button class="btn-danger" (click)="deleteTeam(team.id)">Yes</button>
+                      <button class="btn-link" (click)="confirmDeleteTeamId.set(null)">No</button>
+                    </span>
+                  } @else {
+                    <button class="btn-danger" (click)="confirmDeleteTeamId.set(team.id)">Delete</button>
+                  }
                 </span>
               }
             </li>
@@ -302,7 +485,7 @@
           >
             <option value="">Select a member…</option>
             @for (user of users(); track user.id) {
-              <option [value]="user.id">{{ user.email }}</option>
+              <option [value]="user.id">{{ displayMemberOption(user) }}</option>
             }
           </select>
           <button type="submit" class="btn btn-primary">Add to team</button>
@@ -312,12 +495,12 @@
         } @else {
           <table class="data-table">
             <thead>
-              <tr><th>Email</th><th></th></tr>
+              <tr><th>Member</th><th></th></tr>
             </thead>
             <tbody>
               @for (member of teamMembers(); track member.id) {
                 <tr>
-                  <td>{{ member.email }}</td>
+                  <td>{{ displayMemberOption(member) }}</td>
                   <td>
                     <button class="btn-danger" (click)="removeUserFromTeam(member.id)">Remove</button>
                   </td>
@@ -405,7 +588,7 @@
         >
           <option value="">Select a member…</option>
           @for (user of users(); track user.id) {
-            <option [value]="user.id">{{ user.email }}</option>
+            <option [value]="user.id">{{ displayMemberOption(user) }}</option>
           }
         </select>
         <button type="submit" class="btn btn-primary">Add to team</button>
@@ -415,12 +598,12 @@
       } @else {
         <table class="data-table">
           <thead>
-            <tr><th>Email</th><th></th></tr>
+            <tr><th>Member</th><th></th></tr>
           </thead>
           <tbody>
             @for (member of teamMembers(); track member.id) {
               <tr>
-                <td>{{ member.email }}</td>
+                <td>{{ displayMemberOption(member) }}</td>
                 <td>
                   <button class="btn-danger" (click)="removeUserFromTeam(member.id)">Remove</button>
                 </td>
@@ -464,7 +647,15 @@
             } @else {
               <button class="btn-link" (click)="archiveLeague(league.id, true)">Archive</button>
             }
-            <button class="btn-danger" (click)="deleteLeague(league.id)">Delete</button>
+            @if (confirmDeleteLeagueId() === league.id) {
+              <span class="confirm-delete">
+                Are you sure?
+                <button class="btn-danger" (click)="deleteLeague(league.id)">Yes</button>
+                <button class="btn-link" (click)="confirmDeleteLeagueId.set(null)">No</button>
+              </span>
+            } @else {
+              <button class="btn-danger" (click)="confirmDeleteLeagueId.set(league.id)">Delete</button>
+            }
           </li>
         }
       </ul>
@@ -730,8 +921,8 @@
                             name="goalScorer-{{ fixture.id }}"
                           >
                             <option value="">Add scorer…</option>
-                            @for (user of users(); track user.id) {
-                              <option [value]="user.id">{{ user.email }}</option>
+                            @for (user of fixturePlayers(fixture); track user.id) {
+                              <option [value]="user.id">{{ displayMemberOption(user) }}</option>
                             }
                           </select>
                           <button
@@ -808,6 +999,7 @@
             }
           </tbody>
         </table>
+        <p class="standings-note">Win = 3 pts, Draw = 2 pts, Loss = 1 pt, No-show = 0 pts</p>
       }
     </section>
     }

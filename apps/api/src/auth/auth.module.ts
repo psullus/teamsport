@@ -13,6 +13,7 @@ import { LeagueService } from './league.service';
 import { EventService } from './event.service';
 import { JoinRequestService } from './join-request.service';
 import { NotificationService } from './notification.service';
+import { HomeContentService } from './home-content.service';
 import { S3Service } from './s3.service';
 import { EmailService } from './email.service';
 import { UserEntity } from './entities/user.entity';
@@ -29,6 +30,7 @@ import { GoalEntity } from './entities/goal.entity';
 import { EventEntity } from './entities/event.entity';
 import { JoinRequestEntity } from './entities/join-request.entity';
 import { NotificationEntity } from './entities/notification.entity';
+import { CarouselImageEntity } from './entities/carousel-image.entity';
 
 @Module({
   imports: [
@@ -47,6 +49,7 @@ import { NotificationEntity } from './entities/notification.entity';
       EventEntity,
       JoinRequestEntity,
       NotificationEntity,
+      CarouselImageEntity,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -61,7 +64,7 @@ import { NotificationEntity } from './entities/notification.entity';
   providers: [
     AuthService, UserService, OrganisationService, InviteService,
     ClubService, TeamService, LeagueService, EventService,
-    JoinRequestService, NotificationService, S3Service, EmailService,
+    JoinRequestService, NotificationService, HomeContentService, S3Service, EmailService,
   ],
   exports: [AuthService],
 })

@@ -24,6 +24,7 @@ import { LeagueService } from './league.service';
 import { EventService } from './event.service';
 import { JoinRequestService } from './join-request.service';
 import { NotificationService } from './notification.service';
+import { HomeContentService } from './home-content.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -46,6 +47,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
 import { CreateJoinRequestDto } from './dto/create-join-request.dto';
 import { RespondJoinRequestDto } from './dto/respond-join-request.dto';
 import { ROLES } from '@teamsport/shared';
@@ -64,6 +67,7 @@ export class AuthController {
     private eventService: EventService,
     private joinRequestService: JoinRequestService,
     private notificationService: NotificationService,
+    private homeContentService: HomeContentService,
   ) {}
 
   @Post('signup')
@@ -193,12 +197,47 @@ export class AuthController {
     return this.inviteService.listInvites(user.organisationId);
   }
 
+  @Post('org/members')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async createMember(
+    @Body() dto: CreateMemberDto,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.userService.createMember(user.organisationId, dto);
+  }
+
   @Get('org/users')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLES.ADMIN)
   async listOrgUsers(@CurrentUser() currentUser: { id: string; role: string }) {
     const user = await this.authService.getMe(currentUser.id);
     return this.userService.listByOrganisation(user.organisationId);
+  }
+
+  @Patch('org/users/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async updateOrgUser(
+    @Param('id') id: string,
+    @Body() dto: UpdateMemberDto,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.userService.updateOrgUser(id, user.organisationId, dto);
+  }
+
+  @Delete('org/users/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async deleteOrgUser(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    await this.userService.deleteOrgUser(id, user.organisationId);
+    return { success: true };
   }
 
   @Get('organisations')
@@ -606,6 +645,46 @@ export class AuthController {
   @Roles(ROLES.ADMIN)
   async deleteEvent(@Param('id') id: string) {
     await this.eventService.delete(id);
+    return { success: true };
+  }
+
+  // --- Home content endpoints ---
+
+  @Get('home-content')
+  @UseGuards(JwtAuthGuard)
+  async getHomeContent(@CurrentUser() currentUser: { id: string; role: string }) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.homeContentService.getHomeContent(user.organisationId);
+  }
+
+  @Patch('home-content/message')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async updateHomeMessage(
+    @CurrentUser() currentUser: { id: string; role: string },
+    @Body() body: { message: string | null },
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.homeContentService.updateMessage(user.organisationId, body.message);
+  }
+
+  @Post('home-content/images')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadCarouselImage(
+    @CurrentUser() currentUser: { id: string; role: string },
+    @UploadedFile() image: Express.Multer.File,
+  ) {
+    const user = await this.authService.getMe(currentUser.id);
+    return this.homeContentService.addImage(user.organisationId, image);
+  }
+
+  @Delete('home-content/images/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN)
+  async deleteCarouselImage(@Param('id') id: string) {
+    await this.homeContentService.deleteImage(id);
     return { success: true };
   }
 }

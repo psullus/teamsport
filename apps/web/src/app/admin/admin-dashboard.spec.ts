@@ -9,6 +9,10 @@ describe('AdminDashboard', () => {
   let authService: {
     listOrgUsers: ReturnType<typeof vi.fn>;
     listInvites: ReturnType<typeof vi.fn>;
+    createMember: ReturnType<typeof vi.fn>;
+    updateOrgUser: ReturnType<typeof vi.fn>;
+    deleteOrgUser: ReturnType<typeof vi.fn>;
+    forgotPassword: ReturnType<typeof vi.fn>;
     inviteUser: ReturnType<typeof vi.fn>;
     listClubs: ReturnType<typeof vi.fn>;
     createClub: ReturnType<typeof vi.fn>;
@@ -43,6 +47,10 @@ describe('AdminDashboard', () => {
     deleteInvite: ReturnType<typeof vi.fn>;
     listPendingJoinRequests: ReturnType<typeof vi.fn>;
     respondToJoinRequest: ReturnType<typeof vi.fn>;
+    getHomeContent: ReturnType<typeof vi.fn>;
+    updateHomeMessage: ReturnType<typeof vi.fn>;
+    uploadCarouselImage: ReturnType<typeof vi.fn>;
+    deleteCarouselImage: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -54,6 +62,15 @@ describe('AdminDashboard', () => {
       listInvites: vi.fn().mockResolvedValue([
         { id: 'inv-1', email: 'pending@test.com' },
       ]),
+      createMember: vi.fn().mockResolvedValue({
+        id: 'new-1', email: 'member@test.com', role: 'USER', emailVerified: false,
+      }),
+      updateOrgUser: vi.fn().mockResolvedValue({
+        id: '2', email: 'updated@test.com', role: 'USER', emailVerified: false,
+        firstName: 'Updated', lastName: 'Name', phone: null, sex: null, avatarUrl: null,
+      }),
+      deleteOrgUser: vi.fn().mockResolvedValue(undefined),
+      forgotPassword: vi.fn().mockResolvedValue('https://example.com/reset?token=abc'),
       inviteUser: vi.fn().mockResolvedValue({ token: 'test-token' }),
       listClubs: vi.fn().mockResolvedValue([
         { id: 'club-1', name: 'Club A', type: 'Touch' as const, organisationId: 'org-1' },
@@ -135,6 +152,10 @@ describe('AdminDashboard', () => {
       respondToJoinRequest: vi.fn().mockResolvedValue({
         id: 'jr-1', status: 'approved',
       }),
+      getHomeContent: vi.fn().mockResolvedValue({ message: 'Welcome!', images: [] }),
+      updateHomeMessage: vi.fn().mockResolvedValue({ success: true }),
+      uploadCarouselImage: vi.fn().mockResolvedValue({ id: 'img-1', url: 'https://example.com/img.jpg', sortOrder: 0 }),
+      deleteCarouselImage: vi.fn().mockResolvedValue(undefined),
     };
     await TestBed.configureTestingModule({
       imports: [AdminDashboard],
@@ -249,14 +270,15 @@ describe('AdminDashboard', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const tabs = el.querySelectorAll('.sidebar-btn');
-    expect(tabs.length).toBe(5);
-    expect(tabs[0].textContent).toContain('Members');
-    expect(tabs[1].textContent).toContain('Clubs');
-    expect(tabs[2].textContent).toContain('Teams');
-    expect(tabs[3].textContent).toContain('Leagues');
-    expect(tabs[4].textContent).toContain('Events');
-    expect(tabs[0].classList.contains('sidebar-btn--active')).toBe(true);
-    expect(el.querySelector('h2')?.textContent).toContain('Invite a member');
+    expect(tabs.length).toBe(6);
+    expect(tabs[0].textContent).toContain('Home');
+    expect(tabs[1].textContent).toContain('Members');
+    expect(tabs[2].textContent).toContain('Clubs');
+    expect(tabs[3].textContent).toContain('Teams');
+    expect(tabs[4].textContent).toContain('Leagues');
+    expect(tabs[5].textContent).toContain('Events');
+    expect(tabs[1].classList.contains('sidebar-btn--active')).toBe(true);
+    expect(el.querySelector('h2')?.textContent).toContain('Add a member');
   });
 
   it('should switch to Clubs tab when clicked', async () => {
@@ -265,7 +287,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const clubsTab = el.querySelectorAll('.sidebar-btn')[1] as HTMLButtonElement;
+    const clubsTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
     clubsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('clubs');
@@ -347,7 +369,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const leaguesTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
+    const leaguesTab = el.querySelectorAll('.sidebar-btn')[4] as HTMLButtonElement;
     leaguesTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('leagues');
@@ -446,7 +468,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const eventsTab = el.querySelectorAll('.sidebar-btn')[4] as HTMLButtonElement;
+    const eventsTab = el.querySelectorAll('.sidebar-btn')[5] as HTMLButtonElement;
     eventsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('events');
@@ -486,7 +508,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const teamsTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
+    const teamsTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
     teamsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('teams');
@@ -543,6 +565,106 @@ describe('AdminDashboard', () => {
     await component.rejectJoinRequest('jr-1');
     expect(authService.respondToJoinRequest).toHaveBeenCalledWith('jr-1', 'rejected');
     expect(authService.listPendingJoinRequests).toHaveBeenCalled();
+  });
+
+  it('should create a member and show success', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.memberFirstName.set('John');
+    component.memberLastName.set('Smith');
+    await component.createMember();
+    expect(authService.createMember).toHaveBeenCalledWith({
+      email: undefined,
+      firstName: 'John',
+      lastName: 'Smith',
+    });
+    expect(component.memberSuccess()).toContain('John Smith');
+    expect(component.memberEmail()).toBe('');
+    expect(component.memberFirstName()).toBe('');
+    expect(component.memberLastName()).toBe('');
+  });
+
+  it('should show error on create member failure', async () => {
+    authService.createMember.mockRejectedValue({ error: { message: 'Email already in use' } });
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.memberEmail.set('taken@test.com');
+    await component.createMember();
+    expect(component.memberError()).toBe('Email already in use');
+  });
+
+  it('should edit a member and save changes', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    const user = component.users()[1];
+    component.startEditUser(user);
+    expect(component.editingUserId()).toBe(user.id);
+    component.editUserFirstName.set('Updated');
+    component.editUserLastName.set('Name');
+    component.editUserEmail.set('updated@test.com');
+    component.editUserSex.set('Male');
+    await component.saveUser();
+    expect(authService.updateOrgUser).toHaveBeenCalledWith('2', {
+      firstName: 'Updated',
+      lastName: 'Name',
+      email: 'updated@test.com',
+      sex: 'Male',
+    });
+    expect(component.editingUserId()).toBeNull();
+  });
+
+  it('should cancel editing a member', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    const user = component.users()[0];
+    component.startEditUser(user);
+    expect(component.editingUserId()).toBe(user.id);
+    component.cancelEditUser();
+    expect(component.editingUserId()).toBeNull();
+  });
+
+  it('should send an invite to a member', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    const user = component.users()[0];
+    await component.sendMemberInvite(user);
+    expect(authService.forgotPassword).toHaveBeenCalledWith('admin@test.com');
+    expect(component.memberInviteSuccess()[user.id]).toContain('Invite sent');
+  });
+
+  it('should delete an org user', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    await component.deleteOrgUser('2');
+    expect(authService.deleteOrgUser).toHaveBeenCalledWith('2');
+    expect(authService.listOrgUsers).toHaveBeenCalled();
+  });
+
+  it('should render add member form in members tab', async () => {
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const headings = el.querySelectorAll('h2');
+    const addMemberHeading = Array.from(headings).find(
+      (h) => h.textContent?.includes('Add a member'),
+    );
+    expect(addMemberHeading).toBeTruthy();
+    const form = el.querySelector('input[name="memberEmail"]');
+    expect(form).toBeTruthy();
   });
 
   it('should display join requests table in members tab', async () => {

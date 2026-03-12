@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
   AuthService, User, Role, ROLES, Club, Team, SPORT_TYPES,
   type League, type LeagueDetail, type Fixture, type StandingsRow, type TopScorer,
-  type Event, type JoinRequest,
+  type Event, type JoinRequest, type CarouselImage,
 } from '../services/auth.service';
 
 @Component({
@@ -14,7 +14,14 @@ import {
   styleUrl: './admin-dashboard.css',
 })
 export class AdminDashboard implements OnInit {
-  activeTab = signal<'members' | 'clubs' | 'teams' | 'leagues' | 'events'>('members');
+  activeTab = signal<'home' | 'members' | 'clubs' | 'teams' | 'leagues' | 'events'>('members');
+  memberSearch = signal('');
+  memberEmail = signal('');
+  memberFirstName = signal('');
+  memberLastName = signal('');
+  memberSex = signal('');
+  memberSuccess = signal('');
+  memberError = signal('');
   inviteEmail = signal('');
   inviteSuccess = signal('');
   inviteError = signal('');
@@ -58,6 +65,7 @@ export class AdminDashboard implements OnInit {
   fixtureDate = signal('');
   goalScorerIds = signal<Record<string, string>>({});
   openGoals = signal<Record<string, boolean>>({});
+  teamMembersCache = signal<Record<string, User[]>>({});
   showRoundRobinForm = signal(false);
   roundRobinDays = signal<string[]>(['monday']);
   roundRobinTimeSlots = signal<string[]>(['19:00']);
@@ -88,11 +96,41 @@ export class AdminDashboard implements OnInit {
   editEventLocation = signal('');
   editEventDescription = signal('');
 
+  homeMessage = signal('');
+  carouselImages = signal<CarouselImage[]>([]);
+  carouselUploadError = signal('');
+  homeMessageSaving = signal(false);
+
   roles: Role[] = [ROLES.ADMIN, ROLES.USER];
+
+  filteredUsers(): User[] {
+    const term = this.memberSearch().toLowerCase().trim();
+    if (!term) return this.users();
+    return this.users().filter((u) => {
+      const name = [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase();
+      const email = u.email?.endsWith('@noemail.local') ? '' : u.email.toLowerCase();
+      return name.includes(term) || email.includes(term);
+    });
+  }
+
+  displayEmail(user: User): string {
+    return user.email?.endsWith('@noemail.local') ? '' : user.email;
+  }
+
+  displayName(user: User): string {
+    return [user.firstName, user.lastName].filter(Boolean).join(' ');
+  }
+
+  displayMemberOption(user: User): string {
+    const name = this.displayName(user);
+    const email = this.displayEmail(user);
+    if (name && email) return `${name} (${email})`;
+    return name || email;
+  }
 
   constructor(private authService: AuthService) {}
 
-  setTab(tab: 'members' | 'clubs' | 'teams' | 'leagues' | 'events') {
+  setTab(tab: 'home' | 'members' | 'clubs' | 'teams' | 'leagues' | 'events') {
     this.activeTab.set(tab);
   }
 
@@ -103,6 +141,115 @@ export class AdminDashboard implements OnInit {
     this.loadClubs().then(() => this.loadAllTeams());
     this.loadLeagues();
     this.loadEvents();
+    this.loadHomeContent();
+  }
+
+  editingUserId = signal<string | null>(null);
+  editUserFirstName = signal('');
+  editUserLastName = signal('');
+  editUserEmail = signal('');
+  editUserSex = signal('');
+  confirmDeleteUserId = signal<string | null>(null);
+  memberInviteSuccess = signal<Record<string, string>>({});
+  memberInviteError = signal<Record<string, string>>({});
+  confirmDeleteClubId = signal<string | null>(null);
+  confirmDeleteTeamId = signal<string | null>(null);
+  confirmDeleteLeagueId = signal<string | null>(null);
+
+  async loadHomeContent() {
+    try {
+      const content = await this.authService.getHomeContent();
+      this.homeMessage.set(content.message ?? '');
+      this.carouselImages.set(content.images);
+    } catch {
+      this.homeMessage.set('');
+      this.carouselImages.set([]);
+    }
+  }
+
+  async saveHomeMessage() {
+    this.homeMessageSaving.set(true);
+    try {
+      const msg = this.homeMessage() || null;
+      await this.authService.updateHomeMessage(msg);
+    } finally {
+      this.homeMessageSaving.set(false);
+    }
+  }
+
+  async uploadCarouselImage(event: globalThis.Event) {
+    this.carouselUploadError.set('');
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const image = await this.authService.uploadCarouselImage(formData);
+      this.carouselImages.update((imgs) => [...imgs, image]);
+    } catch (err: any) {
+      this.carouselUploadError.set(err?.error?.message || 'Failed to upload image.');
+    }
+    input.value = '';
+  }
+
+  async deleteCarouselImage(id: string) {
+    await this.authService.deleteCarouselImage(id);
+    this.carouselImages.update((imgs) => imgs.filter((i) => i.id !== id));
+  }
+
+  startEditUser(user: User) {
+    this.editingUserId.set(user.id);
+    this.editUserFirstName.set(user.firstName ?? '');
+    this.editUserLastName.set(user.lastName ?? '');
+    this.editUserEmail.set(this.displayEmail(user));
+    this.editUserSex.set(user.sex ?? '');
+  }
+
+  cancelEditUser() {
+    this.editingUserId.set(null);
+  }
+
+  async saveUser() {
+    const id = this.editingUserId();
+    if (!id) return;
+    try {
+      await this.authService.updateOrgUser(id, {
+        firstName: this.editUserFirstName(),
+        lastName: this.editUserLastName(),
+        email: this.editUserEmail() || undefined,
+        sex: this.editUserSex(),
+      });
+      this.editingUserId.set(null);
+      this.loadUsers();
+    } catch (err: any) {
+      this.memberError.set(err?.error?.message || 'Failed to update member.');
+    }
+  }
+
+  async sendMemberInvite(user: User) {
+    const email = this.displayEmail(user);
+    if (!email) return;
+    this.memberInviteSuccess.update((m) => ({ ...m, [user.id]: '' }));
+    this.memberInviteError.update((m) => ({ ...m, [user.id]: '' }));
+    try {
+      const resetLink = await this.authService.forgotPassword(email);
+      const msg = resetLink
+        ? `Invite sent. Link: ${resetLink}`
+        : `Invite sent to ${email}.`;
+      this.memberInviteSuccess.update((m) => ({ ...m, [user.id]: msg }));
+    } catch (err: any) {
+      this.memberInviteError.update((m) => ({
+        ...m,
+        [user.id]: err?.error?.message || 'Failed to send invite.',
+      }));
+    }
+  }
+
+  async deleteOrgUser(userId: string) {
+    this.confirmDeleteUserId.set(null);
+    await this.authService.deleteOrgUser(userId);
+    this.loadUsers();
   }
 
   async loadUsers() {
@@ -129,6 +276,28 @@ export class AdminDashboard implements OnInit {
   async deleteInvite(inviteId: string) {
     await this.authService.deleteInvite(inviteId);
     this.loadInvites();
+  }
+
+  async createMember() {
+    this.memberSuccess.set('');
+    this.memberError.set('');
+    try {
+      const email = this.memberEmail() || undefined;
+      const firstName = this.memberFirstName() || undefined;
+      const lastName = this.memberLastName() || undefined;
+      const sex = this.memberSex() || undefined;
+      if (!email && !firstName && !lastName) return;
+      await this.authService.createMember({ email, firstName, lastName, sex });
+      const label = email || [firstName, lastName].filter(Boolean).join(' ');
+      this.memberSuccess.set(`Member ${label} added successfully.`);
+      this.memberEmail.set('');
+      this.memberFirstName.set('');
+      this.memberLastName.set('');
+      this.memberSex.set('');
+      this.loadUsers();
+    } catch (err: any) {
+      this.memberError.set(err?.error?.message || 'Failed to add member.');
+    }
   }
 
   async sendInvite() {
@@ -211,6 +380,7 @@ export class AdminDashboard implements OnInit {
   }
 
   async deleteClub(clubId: string) {
+    this.confirmDeleteClubId.set(null);
     await this.authService.deleteClub(clubId);
     if (this.selectedClub()?.id === clubId) {
       this.selectedClub.set(null);
@@ -314,6 +484,7 @@ export class AdminDashboard implements OnInit {
   }
 
   async deleteTeam(teamId: string) {
+    this.confirmDeleteTeamId.set(null);
     await this.authService.deleteTeam(teamId);
     if (this.selectedTeam()?.id === teamId) {
       this.selectedTeam.set(null);
@@ -414,13 +585,43 @@ export class AdminDashboard implements OnInit {
 
   async loadLeagueDetail(leagueId: string) {
     try {
-      this.leagueDetail.set(await this.authService.getLeagueDetail(leagueId));
+      const detail = await this.authService.getLeagueDetail(leagueId);
+      this.leagueDetail.set(detail);
+      await this.loadParticipantMembers(detail.participants);
     } catch {
       this.leagueDetail.set(null);
     }
   }
 
+  private async loadParticipantMembers(participants: Team[]) {
+    const cache: Record<string, User[]> = {};
+    for (const team of participants) {
+      try {
+        cache[team.id] = await this.authService.listTeamUsers(team.id);
+      } catch {
+        cache[team.id] = [];
+      }
+    }
+    this.teamMembersCache.set(cache);
+  }
+
+  fixturePlayers(fixture: Fixture): User[] {
+    const cache = this.teamMembersCache();
+    const home = cache[fixture.homeId] ?? [];
+    const away = cache[fixture.awayId] ?? [];
+    const seen = new Set<string>();
+    const result: User[] = [];
+    for (const u of [...home, ...away]) {
+      if (!seen.has(u.id)) {
+        seen.add(u.id);
+        result.push(u);
+      }
+    }
+    return result;
+  }
+
   async deleteLeague(leagueId: string) {
+    this.confirmDeleteLeagueId.set(null);
     await this.authService.deleteLeague(leagueId);
     this.selectedLeague.set(null);
     this.leagueDetail.set(null);

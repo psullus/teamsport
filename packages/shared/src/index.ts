@@ -32,7 +32,16 @@ export const POSITIONS_BY_SPORT: Record<SportType, string[]> = {
 export interface Organisation {
   id: string;
   name: string;
+  homeMessage?: string | null;
 }
+
+export interface CarouselImage {
+  id: string;
+  url: string;
+  sortOrder: number;
+}
+
+export type Sex = 'Male' | 'Female';
 
 export interface User {
   id: string;
@@ -44,6 +53,7 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
+  sex: Sex | null;
   avatarUrl: string | null;
 }
 
