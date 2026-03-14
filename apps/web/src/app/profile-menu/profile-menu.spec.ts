@@ -16,6 +16,7 @@ const defaultUser: User = {
   firstName: null,
   lastName: null,
   phone: null,
+  sex: null,
   avatarUrl: null,
 };
 
@@ -186,12 +187,12 @@ describe('ProfileMenu', () => {
       fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
     );
     const controlItem = items.find((el) => el.textContent?.includes('Control panel'));
-    const adminItem = items.find((el) => el.textContent?.includes('Account settings'));
+    const adminItem = items.find((el) => el.textContent?.includes('Settings'));
     expect(controlItem).toBeTruthy();
     expect(adminItem).toBeTruthy();
   });
 
-  it('should show "Account settings" link for ADMIN user', async () => {
+  it('should show "Settings" link for ADMIN user', async () => {
     authService._setUser({
       ...defaultUser,
       organisationName: 'Test FC',
@@ -205,7 +206,7 @@ describe('ProfileMenu', () => {
       fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
     );
     const controlItem = items.find((el) => el.textContent?.includes('Control panel'));
-    const adminItem = items.find((el) => el.textContent?.includes('Account settings'));
+    const adminItem = items.find((el) => el.textContent?.includes('Settings'));
     expect(controlItem).toBeFalsy();
     expect(adminItem).toBeTruthy();
   });
@@ -225,7 +226,7 @@ describe('ProfileMenu', () => {
       fixture.nativeElement.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>
     );
     const controlItem = items.find((el) => el.textContent?.includes('Control panel'));
-    const adminItem = items.find((el) => el.textContent?.includes('Account settings'));
+    const adminItem = items.find((el) => el.textContent?.includes('Settings'));
     expect(controlItem).toBeFalsy();
     expect(adminItem).toBeFalsy();
   });

@@ -1,36 +1,34 @@
 <div class="dashboard-page">
-  <h1><span class="material-symbols-outlined page-icon">settings</span> Account settings</h1>
-
   <div class="dashboard-layout">
-    <nav class="sidebar">
+    <nav class="nav-top">
       <button
-        class="sidebar-btn"
-        [class.sidebar-btn--active]="activeTab() === 'home'"
+        class="nav-item"
+        [class.nav-item--active]="activeTab() === 'home'"
         (click)="setTab('home')"
       >Home</button>
       <button
-        class="sidebar-btn"
-        [class.sidebar-btn--active]="activeTab() === 'members'"
+        class="nav-item"
+        [class.nav-item--active]="activeTab() === 'members'"
         (click)="setTab('members')"
       >Members</button>
       <button
-        class="sidebar-btn"
-        [class.sidebar-btn--active]="activeTab() === 'clubs'"
+        class="nav-item"
+        [class.nav-item--active]="activeTab() === 'clubs'"
         (click)="setTab('clubs')"
       >Clubs</button>
       <button
-        class="sidebar-btn"
-        [class.sidebar-btn--active]="activeTab() === 'teams'"
+        class="nav-item"
+        [class.nav-item--active]="activeTab() === 'teams'"
         (click)="setTab('teams')"
       >Teams</button>
       <button
-        class="sidebar-btn"
-        [class.sidebar-btn--active]="activeTab() === 'leagues'"
+        class="nav-item"
+        [class.nav-item--active]="activeTab() === 'leagues'"
         (click)="setTab('leagues')"
       >Leagues</button>
       <button
-        class="sidebar-btn"
-        [class.sidebar-btn--active]="activeTab() === 'events'"
+        class="nav-item"
+        [class.nav-item--active]="activeTab() === 'events'"
         (click)="setTab('events')"
       >Events</button>
     </nav>
@@ -999,6 +997,7 @@
             }
           </tbody>
         </table>
+        <p class="standings-note">P = Played, W = Won, D = Drawn, L = Lost, NS = No-shows, SF = Scores for, SA = Scores against, SD = Score difference, Pts = Points</p>
         <p class="standings-note">Win = 3 pts, Draw = 2 pts, Loss = 1 pt, No-show = 0 pts</p>
       }
     </section>

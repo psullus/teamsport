@@ -38,6 +38,8 @@ export class Home {
   carouselImages = signal<CarouselImage[]>([]);
   carouselIndex = signal(0);
 
+  leagueDetailTab = signal<'standings' | 'fixtures' | 'scorers'>('fixtures');
+
   events = signal<Event[]>([]);
   eventTab = signal<'upcoming' | 'past'>('upcoming');
 

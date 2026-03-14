@@ -173,12 +173,12 @@ describe('AdminDashboard', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should display the heading', async () => {
+  it('should display the top nav', async () => {
     const fixture = TestBed.createComponent(AdminDashboard);
     fixture.detectChanges();
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('h1')?.textContent).toContain('Account settings');
+    expect(el.querySelector('.nav-top')).toBeTruthy();
   });
 
   it('should load and display org users', async () => {
@@ -269,7 +269,7 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const tabs = el.querySelectorAll('.sidebar-btn');
+    const tabs = el.querySelectorAll('.nav-item');
     expect(tabs.length).toBe(6);
     expect(tabs[0].textContent).toContain('Home');
     expect(tabs[1].textContent).toContain('Members');
@@ -277,7 +277,7 @@ describe('AdminDashboard', () => {
     expect(tabs[3].textContent).toContain('Teams');
     expect(tabs[4].textContent).toContain('Leagues');
     expect(tabs[5].textContent).toContain('Events');
-    expect(tabs[1].classList.contains('sidebar-btn--active')).toBe(true);
+    expect(tabs[1].classList.contains('nav-item--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Add a member');
   });
 
@@ -287,11 +287,11 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const clubsTab = el.querySelectorAll('.sidebar-btn')[2] as HTMLButtonElement;
+    const clubsTab = el.querySelectorAll('.nav-item')[2] as HTMLButtonElement;
     clubsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('clubs');
-    expect(clubsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(clubsTab.classList.contains('nav-item--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Clubs');
   });
 
@@ -369,11 +369,11 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const leaguesTab = el.querySelectorAll('.sidebar-btn')[4] as HTMLButtonElement;
+    const leaguesTab = el.querySelectorAll('.nav-item')[4] as HTMLButtonElement;
     leaguesTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('leagues');
-    expect(leaguesTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(leaguesTab.classList.contains('nav-item--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Leagues');
   });
 
@@ -468,11 +468,11 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const eventsTab = el.querySelectorAll('.sidebar-btn')[5] as HTMLButtonElement;
+    const eventsTab = el.querySelectorAll('.nav-item')[5] as HTMLButtonElement;
     eventsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('events');
-    expect(eventsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(eventsTab.classList.contains('nav-item--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Create Event');
   });
 
@@ -508,11 +508,11 @@ describe('AdminDashboard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const teamsTab = el.querySelectorAll('.sidebar-btn')[3] as HTMLButtonElement;
+    const teamsTab = el.querySelectorAll('.nav-item')[3] as HTMLButtonElement;
     teamsTab.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.activeTab()).toBe('teams');
-    expect(teamsTab.classList.contains('sidebar-btn--active')).toBe(true);
+    expect(teamsTab.classList.contains('nav-item--active')).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('Teams');
   });
 

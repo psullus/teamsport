@@ -1,7 +1,5 @@
 @if (auth.isLoggedIn()) {
   <div class="dashboard">
-    <h1 class="dashboard-heading">Welcome, {{ auth.user()?.firstName ?? 'there' }}</h1>
-
     @if (loading()) {
       <p class="dashboard-loading">Loading your clubs...</p>
     } @else if (error()) {
@@ -11,7 +9,7 @@
       </div>
     } @else {
       <div class="dashboard-layout">
-        <nav class="nav-sidebar">
+        <nav class="nav-top">
           <button
             class="nav-item"
             [class.nav-item--active]="activeView() === 'home'"
@@ -43,204 +41,180 @@
           @if (activeView() === 'home') {
             <section class="home-section">
               @if (homeMessage()) {
-                <div class="home-welcome-message">{{ homeMessage() }}</div>
+                <div class="home-card">
+                  <h3 class="home-card-heading">Welcome</h3>
+                  <div class="home-welcome-message">{{ homeMessage() }}</div>
+                </div>
               }
 
               @if (carouselImages().length > 0) {
-                <div class="carousel">
-                  <button class="carousel-prev" (click)="prevSlide()">&lsaquo;</button>
-                  <div class="carousel-track">
-                    @for (img of carouselImages(); track img.id; let i = $index) {
-                      <img
-                        class="carousel-image"
-                        [class.carousel-image--active]="i === carouselIndex()"
-                        [src]="img.url"
-                        alt="Carousel image"
-                      />
-                    }
-                  </div>
-                  <button class="carousel-next" (click)="nextSlide()">&rsaquo;</button>
-                  <div class="carousel-dots">
-                    @for (img of carouselImages(); track img.id; let i = $index) {
-                      <span
-                        class="carousel-dot"
-                        [class.carousel-dot--active]="i === carouselIndex()"
-                        (click)="carouselIndex.set(i)"
-                      ></span>
-                    }
+                <div class="home-card home-card--flush">
+                  <h3 class="home-card-heading">Gallery</h3>
+                  <div class="carousel">
+                    <button class="carousel-prev" (click)="prevSlide()">&lsaquo;</button>
+                    <div class="carousel-track">
+                      @for (img of carouselImages(); track img.id; let i = $index) {
+                        <img
+                          class="carousel-image"
+                          [class.carousel-image--active]="i === carouselIndex()"
+                          [src]="img.url"
+                          alt="Carousel image"
+                        />
+                      }
+                    </div>
+                    <button class="carousel-next" (click)="nextSlide()">&rsaquo;</button>
+                    <div class="carousel-dots">
+                      @for (img of carouselImages(); track img.id; let i = $index) {
+                        <span
+                          class="carousel-dot"
+                          [class.carousel-dot--active]="i === carouselIndex()"
+                          (click)="carouselIndex.set(i)"
+                        ></span>
+                      }
+                    </div>
                   </div>
                 </div>
               }
 
               @if (upcomingEvents().length > 0) {
-                <h3 class="home-upcoming-heading">Upcoming events</h3>
-                <div class="event-cards">
-                  @for (event of upcomingEvents(); track event.id) {
-                    <div class="event-card">
-                      <h3>{{ event.title }}</h3>
-                      <span class="event-card-date">
-                        {{ event.date }}
-                        @if (event.allDay) {
-                          — All day
-                        } @else if (event.startTime) {
-                          — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                <div class="home-card">
+                  <h3 class="home-card-heading">Upcoming events</h3>
+                  <div class="event-cards">
+                    @for (event of upcomingEvents(); track event.id) {
+                      <div class="event-card">
+                        <h3>{{ event.title }}</h3>
+                        <span class="event-card-date">
+                          {{ event.date }}
+                          @if (event.allDay) {
+                            — All day
+                          } @else if (event.startTime) {
+                            — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                          }
+                        </span>
+                        <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
+                        @if (event.location) {
+                          <span class="event-card-meta">{{ event.location }}</span>
                         }
-                      </span>
-                      <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
-                      @if (event.location) {
-                        <span class="event-card-meta">{{ event.location }}</span>
-                      }
-                    </div>
-                  }
+                      </div>
+                    }
+                  </div>
                 </div>
               }
             </section>
           }
 
           @if (activeView() === 'clubs') {
-            <h2 class="clubs-heading">Clubs</h2>
-            @if (clubs().length === 0) {
-              <div class="browse-section">
+            <section class="home-section">
+              @if (clubs().length === 0) {
                 @if (pendingRequests().length > 0) {
-                  <h3 class="browse-subheading">Your pending requests</h3>
-                  <ul class="pending-requests-list">
-                    @for (req of pendingRequests(); track req.id) {
-                      <li class="pending-request-item">
-                        <span>{{ req.targetName }} ({{ req.targetType }})</span>
-                        <span class="requested-pill">Requested</span>
+                  <div class="home-card">
+                    <h3 class="home-card-heading">Your pending requests</h3>
+                    <ul class="pending-requests-list">
+                      @for (req of pendingRequests(); track req.id) {
+                        <li class="pending-request-item">
+                          <span>{{ req.targetName }} ({{ req.targetType }})</span>
+                          <span class="requested-pill">Requested</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                <div class="home-card">
+                  <h3 class="home-card-heading">Available clubs &amp; teams</h3>
+                  @if (availableClubs().length === 0) {
+                    <p class="teams-empty">No clubs available in your organisation.</p>
+                  } @else {
+                    <div class="browse-clubs">
+                      @for (club of availableClubs(); track club.id) {
+                        <div class="browse-club-card">
+                          <div class="browse-club-header">
+                            <div>
+                              <h4 class="browse-club-name">{{ club.name }}</h4>
+                              <span class="sport-badge">{{ club.type }}</span>
+                            </div>
+                            <div class="browse-club-actions">
+                              @if (hasPendingRequest('club', club.id)) {
+                                <span class="requested-pill">Requested</span>
+                              } @else {
+                                <button
+                                  class="btn btn-primary btn-sm"
+                                  (click)="requestToJoin('club', club.id)"
+                                  [disabled]="isRequestLoading('club', club.id)"
+                                >Request to join club</button>
+                              }
+                              <button class="btn btn-secondary btn-sm" (click)="toggleClubTeams(club.id)">
+                                {{ expandedClubs()[club.id] ? 'Hide' : 'Show' }} teams
+                              </button>
+                            </div>
+                          </div>
+                          @if (expandedClubs()[club.id]) {
+                            <div class="browse-teams">
+                              @if (!availableTeams()[club.id] || availableTeams()[club.id].length === 0) {
+                                <p class="teams-empty">No teams in this club.</p>
+                              } @else {
+                                @for (team of availableTeams()[club.id]; track team.id) {
+                                  <div class="browse-team-row">
+                                    <span>{{ team.name }}</span>
+                                    @if (hasPendingRequest('team', team.id)) {
+                                      <span class="requested-pill">Requested</span>
+                                    } @else {
+                                      <button
+                                        class="btn btn-primary btn-sm"
+                                        (click)="requestToJoin('team', team.id)"
+                                        [disabled]="isRequestLoading('team', team.id)"
+                                      >Request to join</button>
+                                    }
+                                  </div>
+                                }
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="home-card">
+                  <h3 class="home-card-heading">Clubs</h3>
+                  <ul class="club-list">
+                    @for (club of clubs(); track club.id) {
+                      <li>
+                        <button
+                          class="club-item"
+                          [class.club-item--active]="selectedClub()?.id === club.id"
+                          (click)="selectClub(club)"
+                        >
+                          {{ club.name }}
+                        </button>
                       </li>
                     }
                   </ul>
-                }
+                </div>
 
-                <h3 class="browse-subheading">Available clubs &amp; teams</h3>
-                @if (availableClubs().length === 0) {
-                  <p class="teams-empty">No clubs available in your organisation.</p>
-                } @else {
-                  <div class="browse-clubs">
-                    @for (club of availableClubs(); track club.id) {
-                      <div class="browse-club-card">
-                        <div class="browse-club-header">
-                          <div>
-                            <h4 class="browse-club-name">{{ club.name }}</h4>
-                            <span class="sport-badge">{{ club.type }}</span>
-                          </div>
-                          <div class="browse-club-actions">
-                            @if (hasPendingRequest('club', club.id)) {
-                              <span class="requested-pill">Requested</span>
-                            } @else {
-                              <button
-                                class="btn btn-primary btn-sm"
-                                (click)="requestToJoin('club', club.id)"
-                                [disabled]="isRequestLoading('club', club.id)"
-                              >Request to join club</button>
-                            }
-                            <button class="btn btn-secondary btn-sm" (click)="toggleClubTeams(club.id)">
-                              {{ expandedClubs()[club.id] ? 'Hide' : 'Show' }} teams
-                            </button>
-                          </div>
-                        </div>
-                        @if (expandedClubs()[club.id]) {
-                          <div class="browse-teams">
-                            @if (!availableTeams()[club.id] || availableTeams()[club.id].length === 0) {
-                              <p class="teams-empty">No teams in this club.</p>
-                            } @else {
-                              @for (team of availableTeams()[club.id]; track team.id) {
-                                <div class="browse-team-row">
-                                  <span>{{ team.name }}</span>
-                                  @if (hasPendingRequest('team', team.id)) {
-                                    <span class="requested-pill">Requested</span>
-                                  } @else {
-                                    <button
-                                      class="btn btn-primary btn-sm"
-                                      (click)="requestToJoin('team', team.id)"
-                                      [disabled]="isRequestLoading('team', team.id)"
-                                    >Request to join</button>
-                                  }
-                                </div>
-                              }
-                            }
-                          </div>
-                        }
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            } @else {
-              <ul class="club-list">
-                @for (club of clubs(); track club.id) {
-                  <li>
-                    <button
-                      class="club-item"
-                      [class.club-item--active]="selectedClub()?.id === club.id"
-                      (click)="selectClub(club)"
-                    >
-                      {{ club.name }}
-                    </button>
-                  </li>
-                }
-              </ul>
-
-              <div class="teams-area">
-                <h2 class="teams-heading">{{ selectedClub()?.name }} — Teams</h2>
-                @if (selectedTeams().length === 0) {
-                  <p class="teams-empty">No teams in this club yet.</p>
-                } @else {
-                  <div class="teams-grid">
-                    @for (team of selectedTeams(); track team.id) {
-                      <button
-                        class="team-card"
-                        [class.team-card--active]="selectedTeam()?.id === team.id"
-                        (click)="selectTeam(team)"
-                      >
-                        <h3>{{ team.name }}</h3>
-                      </button>
-                    }
-                  </div>
-                  @if (selectedTeam()) {
-                    <section class="team-members">
-                      <h3 class="team-members-heading">{{ selectedTeam()!.name }} — Members</h3>
-                      @if (teamMembers().length === 0) {
-                        <p class="teams-empty">No members in this team.</p>
-                      } @else {
-                        <ul class="member-list">
-                          @for (member of teamMembers(); track member.id) {
-                            <li class="member-item">
-                              <span class="member-name">{{ member.firstName ?? '' }} {{ member.lastName ?? '' }}</span>
-                              <span class="member-email">{{ member.email }}</span>
-                            </li>
-                          }
-                        </ul>
+                <div class="home-card">
+                  <h3 class="home-card-heading">{{ selectedClub()?.name }} — Teams</h3>
+                  @if (selectedTeams().length === 0) {
+                    <p class="teams-empty">No teams in this club yet.</p>
+                  } @else {
+                    <div class="teams-grid">
+                      @for (team of selectedTeams(); track team.id) {
+                        <button
+                          class="team-card"
+                          [class.team-card--active]="selectedTeam()?.id === team.id"
+                          (click)="selectTeam(team)"
+                        >
+                          <h3>{{ team.name }}</h3>
+                        </button>
                       }
-                    </section>
-                  }
-                }
-              </div>
-            }
-          }
-
-          @if (activeView() === 'teams') {
-            <section class="teams-section">
-              <h2 class="teams-heading">Teams</h2>
-              @if (allMyTeams().length === 0) {
-                <p class="teams-empty">You are not a member of any teams yet.</p>
-              } @else {
-                <div class="teams-grid">
-                  @for (team of allMyTeams(); track team.id) {
-                    <button
-                      class="team-card"
-                      [class.team-card--active]="selectedTeam()?.id === team.id"
-                      (click)="selectTeam(team)"
-                    >
-                      <h3>{{ team.name }}</h3>
-                      <span class="team-club-badge">{{ team.clubName }}</span>
-                    </button>
+                    </div>
                   }
                 </div>
+
                 @if (selectedTeam()) {
-                  <section class="team-members">
-                    <h3 class="team-members-heading">{{ selectedTeam()!.name }} — Members</h3>
+                  <div class="home-card">
+                    <h3 class="home-card-heading">{{ selectedTeam()!.name }} — Members</h3>
                     @if (teamMembers().length === 0) {
                       <p class="teams-empty">No members in this team.</p>
                     } @else {
@@ -248,39 +222,106 @@
                         @for (member of teamMembers(); track member.id) {
                           <li class="member-item">
                             <span class="member-name">{{ member.firstName ?? '' }} {{ member.lastName ?? '' }}</span>
-                            <span class="member-email">{{ member.email }}</span>
+                            @if (!member.email.includes('@noemail.local')) {
+                              <span class="member-email">{{ member.email }}</span>
+                            }
                           </li>
                         }
                       </ul>
                     }
-                  </section>
+                  </div>
                 }
               }
             </section>
           }
 
-          @if (activeView() === 'leagues') {
-            <section class="leagues-section">
-              <h2 class="leagues-heading">Leagues</h2>
-              @if (leagues().length === 0) {
-                <p class="teams-empty">No leagues yet.</p>
-              } @else {
-                <div class="leagues-grid">
-                  @for (league of leagues(); track league.id) {
-                    <button
-                      class="league-card"
-                      [class.league-card--active]="selectedLeague()?.id === league.id"
-                      (click)="selectLeague(league)"
-                    >
-                      <h3>{{ league.name }}</h3>
-                      <span class="league-type-badge">{{ league.type }}</span>
-                    </button>
+          @if (activeView() === 'teams') {
+            <section class="home-section">
+              <div class="home-card">
+                <h3 class="home-card-heading">Teams</h3>
+                @if (allMyTeams().length === 0) {
+                  <p class="teams-empty">You are not a member of any teams yet.</p>
+                } @else {
+                  <div class="teams-grid">
+                    @for (team of allMyTeams(); track team.id) {
+                      <button
+                        class="team-card"
+                        [class.team-card--active]="selectedTeam()?.id === team.id"
+                        (click)="selectTeam(team)"
+                      >
+                        <h3>{{ team.name }}</h3>
+                        <span class="team-club-badge">{{ team.clubName }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (selectedTeam()) {
+                <div class="home-card">
+                  <h3 class="home-card-heading">{{ selectedTeam()!.name }} — Members</h3>
+                  @if (teamMembers().length === 0) {
+                    <p class="teams-empty">No members in this team.</p>
+                  } @else {
+                    <ul class="member-list">
+                      @for (member of teamMembers(); track member.id) {
+                        <li class="member-item">
+                          <span class="member-name">{{ member.firstName ?? '' }} {{ member.lastName ?? '' }}</span>
+                          @if (!member.email.includes('@noemail.local')) {
+                            <span class="member-email">{{ member.email }}</span>
+                          }
+                        </li>
+                      }
+                    </ul>
                   }
                 </div>
+              }
+            </section>
+          }
 
-                @if (selectedLeague() && leagueDetail()) {
-                  <div class="league-detail">
-                    <h3 class="league-detail-heading">{{ selectedLeague()!.name }} — Standings</h3>
+          @if (activeView() === 'leagues') {
+            <section class="home-section">
+              <div class="home-card">
+                <h3 class="home-card-heading">Leagues</h3>
+                @if (leagues().length === 0) {
+                  <p class="teams-empty">No leagues yet.</p>
+                } @else {
+                  <div class="leagues-grid">
+                    @for (league of leagues(); track league.id) {
+                      <button
+                        class="league-card"
+                        [class.league-card--active]="selectedLeague()?.id === league.id"
+                        (click)="selectLeague(league)"
+                      >
+                        <h3>{{ league.name }}</h3>
+                        <span class="league-type-badge">{{ league.type }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (selectedLeague() && leagueDetail()) {
+                <div class="home-card">
+                  <div class="league-detail-tabs">
+                    <button
+                      class="league-detail-tab"
+                      [class.league-detail-tab--active]="leagueDetailTab() === 'fixtures'"
+                      (click)="leagueDetailTab.set('fixtures')"
+                    >Fixtures</button>
+                    <button
+                      class="league-detail-tab"
+                      [class.league-detail-tab--active]="leagueDetailTab() === 'standings'"
+                      (click)="leagueDetailTab.set('standings')"
+                    >Standings</button>
+                    <button
+                      class="league-detail-tab"
+                      [class.league-detail-tab--active]="leagueDetailTab() === 'scorers'"
+                      (click)="leagueDetailTab.set('scorers')"
+                    >Top Scorers</button>
+                  </div>
+
+                  @if (leagueDetailTab() === 'standings') {
                     @if (leagueDetail()!.standings.length === 0) {
                       <p class="teams-empty">No standings data yet.</p>
                     } @else {
@@ -310,9 +351,11 @@
                           }
                         </tbody>
                       </table>
+                      <p class="standings-note">Win = 3 pts, Draw = 2 pts, Loss = 1 pt, No-show = 0 pts</p>
                     }
+                  }
 
-                    <h3 class="league-detail-heading">Fixtures</h3>
+                  @if (leagueDetailTab() === 'fixtures') {
                     @if (leagueDetail()!.fixtures.length === 0) {
                       <p class="teams-empty">No fixtures yet.</p>
                     } @else {
@@ -332,9 +375,12 @@
                         }
                       </ul>
                     }
+                  }
 
-                    @if (leagueDetail()!.topScorers.length > 0) {
-                      <h3 class="league-detail-heading">Top scorers</h3>
+                  @if (leagueDetailTab() === 'scorers') {
+                    @if (leagueDetail()!.topScorers.length === 0) {
+                      <p class="teams-empty">No scorers yet.</p>
+                    } @else {
                       <ul class="top-scorers-list">
                         @for (scorer of leagueDetail()!.topScorers; track scorer.userId) {
                           <li class="scorer-item">
@@ -344,91 +390,93 @@
                         }
                       </ul>
                     }
-                  </div>
-                }
+                  }
+                </div>
               }
             </section>
           }
 
           @if (activeView() === 'events') {
-            <section class="events-section">
-              <h2 class="events-heading">Events</h2>
-              <div class="event-tabs">
-                <button
-                  class="event-tab-btn"
-                  [class.event-tab-btn--active]="eventTab() === 'upcoming'"
-                  (click)="eventTab.set('upcoming')"
-                >Upcoming</button>
-                <button
-                  class="event-tab-btn"
-                  [class.event-tab-btn--active]="eventTab() === 'past'"
-                  (click)="eventTab.set('past')"
-                >Past</button>
+            <section class="home-section">
+              <div class="home-card">
+                <h3 class="home-card-heading">Events</h3>
+                <div class="event-tabs">
+                  <button
+                    class="event-tab-btn"
+                    [class.event-tab-btn--active]="eventTab() === 'upcoming'"
+                    (click)="eventTab.set('upcoming')"
+                  >Upcoming</button>
+                  <button
+                    class="event-tab-btn"
+                    [class.event-tab-btn--active]="eventTab() === 'past'"
+                    (click)="eventTab.set('past')"
+                  >Past</button>
+                </div>
+
+                @if (eventTab() === 'upcoming') {
+                  @if (upcomingEvents().length === 0) {
+                    <p class="teams-empty">No upcoming events.</p>
+                  } @else {
+                    <div class="event-cards">
+                      @for (event of upcomingEvents(); track event.id) {
+                        <div class="event-card">
+                          <h3>{{ event.title }}</h3>
+                          <span class="event-card-date">
+                            {{ event.date }}
+                            @if (event.allDay) {
+                              — All day
+                            } @else if (event.startTime) {
+                              — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                            }
+                          </span>
+                          <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
+                          @if (event.location) {
+                            <span class="event-card-meta">{{ event.location }}</span>
+                          }
+                          @if (event.primaryContact) {
+                            <span class="event-card-meta">Contact: {{ event.primaryContact }}</span>
+                          }
+                          @if (event.secondaryContact) {
+                            <span class="event-card-meta">{{ event.secondaryContact }}</span>
+                          }
+                          @if (event.description) {
+                            <p class="event-card-desc">{{ event.description }}</p>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+
+                @if (eventTab() === 'past') {
+                  @if (pastEvents().length === 0) {
+                    <p class="teams-empty">No past events.</p>
+                  } @else {
+                    <div class="event-cards">
+                      @for (event of pastEvents(); track event.id) {
+                        <div class="event-card event-card--past">
+                          <h3>{{ event.title }}</h3>
+                          <span class="event-card-date">
+                            {{ event.date }}
+                            @if (event.allDay) {
+                              — All day
+                            } @else if (event.startTime) {
+                              — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
+                            }
+                          </span>
+                          <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
+                          @if (event.location) {
+                            <span class="event-card-meta">{{ event.location }}</span>
+                          }
+                          @if (event.description) {
+                            <p class="event-card-desc">{{ event.description }}</p>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
               </div>
-
-              @if (eventTab() === 'upcoming') {
-                @if (upcomingEvents().length === 0) {
-                  <p class="teams-empty">No upcoming events.</p>
-                } @else {
-                  <div class="event-cards">
-                    @for (event of upcomingEvents(); track event.id) {
-                      <div class="event-card">
-                        <h3>{{ event.title }}</h3>
-                        <span class="event-card-date">
-                          {{ event.date }}
-                          @if (event.allDay) {
-                            — All day
-                          } @else if (event.startTime) {
-                            — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
-                          }
-                        </span>
-                        <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
-                        @if (event.location) {
-                          <span class="event-card-meta">{{ event.location }}</span>
-                        }
-                        @if (event.primaryContact) {
-                          <span class="event-card-meta">Contact: {{ event.primaryContact }}</span>
-                        }
-                        @if (event.secondaryContact) {
-                          <span class="event-card-meta">{{ event.secondaryContact }}</span>
-                        }
-                        @if (event.description) {
-                          <p class="event-card-desc">{{ event.description }}</p>
-                        }
-                      </div>
-                    }
-                  </div>
-                }
-              }
-
-              @if (eventTab() === 'past') {
-                @if (pastEvents().length === 0) {
-                  <p class="teams-empty">No past events.</p>
-                } @else {
-                  <div class="event-cards">
-                    @for (event of pastEvents(); track event.id) {
-                      <div class="event-card event-card--past">
-                        <h3>{{ event.title }}</h3>
-                        <span class="event-card-date">
-                          {{ event.date }}
-                          @if (event.allDay) {
-                            — All day
-                          } @else if (event.startTime) {
-                            — {{ event.startTime }}@if (event.endTime) { – {{ event.endTime }}}
-                          }
-                        </span>
-                        <span class="event-card-meta">Hosted by {{ event.hostedByName }}</span>
-                        @if (event.location) {
-                          <span class="event-card-meta">{{ event.location }}</span>
-                        }
-                        @if (event.description) {
-                          <p class="event-card-desc">{{ event.description }}</p>
-                        }
-                      </div>
-                    }
-                  </div>
-                }
-              }
             </section>
           }
         </main>

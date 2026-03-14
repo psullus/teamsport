@@ -186,16 +186,16 @@ describe('Home (logged in)', () => {
     expect(el.querySelector('.hero')).toBeNull();
   });
 
-  it('should show welcome heading with user first name', async () => {
+  it('should not show a welcome heading', async () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.dashboard-heading')?.textContent).toContain('Welcome, John');
+    expect(el.querySelector('.dashboard-heading')).toBeNull();
   });
 
-  it('should show nav sidebar with five items', async () => {
+  it('should show top nav with five items', async () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -231,7 +231,7 @@ describe('Home (logged in)', () => {
     navItems[2].click();
     fixture.detectChanges();
     expect(el.querySelector('.nav-item--active')?.textContent?.trim()).toBe('Teams');
-    expect(el.querySelector('.teams-section')).toBeTruthy();
+    expect(el.querySelector('.teams-grid')).toBeTruthy();
     expect(el.querySelector('.club-list')).toBeNull();
   });
 
@@ -244,7 +244,7 @@ describe('Home (logged in)', () => {
     const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
     navItems[2].click();
     fixture.detectChanges();
-    const cards = el.querySelectorAll('.teams-section .team-card');
+    const cards = el.querySelectorAll('.team-card');
     expect(cards.length).toBe(3);
     expect(cards[0].textContent).toContain('Team A1');
     expect(cards[0].textContent).toContain('Club A');
@@ -262,7 +262,7 @@ describe('Home (logged in)', () => {
     navItems[3].click();
     fixture.detectChanges();
     expect(el.querySelector('.nav-item--active')?.textContent?.trim()).toBe('Leagues');
-    expect(el.querySelector('.leagues-section')).toBeTruthy();
+    expect(el.querySelector('.leagues-grid')).toBeTruthy();
     expect(el.querySelector('.club-list')).toBeNull();
   });
 
@@ -276,7 +276,7 @@ describe('Home (logged in)', () => {
     navItems[4].click();
     fixture.detectChanges();
     expect(el.querySelector('.nav-item--active')?.textContent?.trim()).toBe('Events');
-    expect(el.querySelector('.events-section')).toBeTruthy();
+    expect(el.querySelector('.event-tabs')).toBeTruthy();
     expect(el.querySelector('.club-list')).toBeNull();
   });
 
@@ -346,7 +346,6 @@ describe('Home (logged in)', () => {
     fixture.componentInstance.setView('clubs');
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.browse-section')).toBeTruthy();
     expect(el.textContent).toContain('Available clubs');
     expect(authService.listOrgClubs).toHaveBeenCalled();
     expect(authService.listMyJoinRequests).toHaveBeenCalled();
@@ -391,7 +390,6 @@ describe('Home (logged in)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(authService.listTeamUsers).toHaveBeenCalledWith('team-1');
-    expect(el.querySelector('.team-members-heading')?.textContent).toContain('Team A1');
     const members = el.querySelectorAll('.member-item');
     expect(members.length).toBe(2);
     expect(members[0].textContent).toContain('Alice');
@@ -411,10 +409,10 @@ describe('Home (logged in)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(el.querySelector('.team-members')).toBeTruthy();
+    expect(el.querySelector('.member-list')).toBeTruthy();
     card.click();
     fixture.detectChanges();
-    expect(el.querySelector('.team-members')).toBeNull();
+    expect(el.querySelector('.member-list')).toBeNull();
   });
 
   it('should clear team selection when switching clubs', async () => {
@@ -430,11 +428,11 @@ describe('Home (logged in)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(el.querySelector('.team-members')).toBeTruthy();
+    expect(el.querySelector('.member-list')).toBeTruthy();
     // Switch club
     (el.querySelectorAll('.club-item')[1] as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(el.querySelector('.team-members')).toBeNull();
+    expect(el.querySelector('.member-list')).toBeNull();
   });
 
   it('should show error state on load failure', async () => {
@@ -480,11 +478,11 @@ describe('Home (logged in)', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(authService.getLeagueDetail).toHaveBeenCalledWith('league-1');
-    expect(el.querySelector('.league-detail')).toBeTruthy();
-    expect(el.querySelector('.standings-table')).toBeTruthy();
-    const rows = el.querySelectorAll('.standings-table tbody tr');
-    expect(rows.length).toBe(2);
-    expect(rows[0].textContent).toContain('Club A');
+    expect(el.querySelector('.league-detail-tabs')).toBeTruthy();
+    expect(el.querySelector('.fixture-list')).toBeTruthy();
+    const items = el.querySelectorAll('.fixture-item');
+    expect(items.length).toBe(1);
+    expect(items[0].textContent).toContain('Club A');
   });
 
   it('should deselect league when clicking the same card again', async () => {
@@ -502,10 +500,10 @@ describe('Home (logged in)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(el.querySelector('.league-detail')).toBeTruthy();
+    expect(el.querySelector('.league-detail-tabs')).toBeTruthy();
     card.click();
     fixture.detectChanges();
-    expect(el.querySelector('.league-detail')).toBeNull();
+    expect(el.querySelector('.league-detail-tabs')).toBeNull();
   });
 
   it('should load and display events in events view', async () => {
@@ -519,8 +517,7 @@ describe('Home (logged in)', () => {
     const navItems = el.querySelectorAll('.nav-item') as NodeListOf<HTMLButtonElement>;
     navItems[4].click();
     fixture.detectChanges();
-    expect(el.querySelector('.events-section')).toBeTruthy();
-    expect(el.querySelector('.events-heading')?.textContent).toContain('Events');
+    expect(el.querySelector('.event-tabs')).toBeTruthy();
   });
 
   it('should show upcoming events by default in events view', async () => {
