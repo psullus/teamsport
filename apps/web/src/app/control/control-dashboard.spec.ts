@@ -54,12 +54,13 @@ describe('ControlDashboard', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should display the heading', async () => {
+  it('should display card sections', async () => {
     const fixture = TestBed.createComponent(ControlDashboard);
     fixture.detectChanges();
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('h1')?.textContent).toContain('Control panel');
+    const cards = el.querySelectorAll('.card');
+    expect(cards.length).toBe(2);
   });
 
   it('should load and display organisations', async () => {

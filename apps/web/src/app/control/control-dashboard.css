@@ -1,25 +1,29 @@
 .dashboard-page {
-  max-width: 900px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem;
+  padding: 1.5rem;
 }
 
-.dashboard-page h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--color-text);
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-.dashboard-section {
-  margin-top: 2rem;
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  background: #fff;
 }
 
-.dashboard-section h2 {
-  font-size: 1.125rem;
+.card-heading {
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.75rem;
 }
 
 .data-table {
